@@ -69,7 +69,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
 - You can simulate diverse non-i.i.d. FL settings by adjusting the total number of total clients (`trainer.num_clients`), the degree of data heterogeneity (`split.alpha`), and the participation rates (`trainer.participation_rate`).
    
    
-   ### FedACG training
+### FedACG training
    
    **CIFAR-100, 100 clients, Dirichlet (0.3) split, 5% participation:**
    ~~~
@@ -101,7 +101,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
    ~~~
 
 
-   ### Other methods training
+### Other methods training
 
 [//]: # (   We also provide code to run FedAvg, FedProx, FedAdam, FedAvgM, FedDyn, FedDecorr, FedLC, FedNTD, FedMLB algorithms.)
    We also provide code to run FedAvg, FedProx, FedAdam, FedAvgM algorithms. <br>
