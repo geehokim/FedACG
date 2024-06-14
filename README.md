@@ -32,14 +32,14 @@ This strategy enables the proposed approach to convey the projected global updat
 We also regularize local updates by aligning each client with the overshot global model to reduce bias and improve the stability of our algorithm.
 We provide the theoretical convergence rate of our algorithm and demonstrate remarkable performance gains in terms of accuracy and communication efficiency compared to the state-of-the-art methods, especially with low client participation rates.
 
-## News 🗞️‍
+## 🌈 News 
 
 **[2024. 06. 14]** 🛗 We now can perform FL training in parallel and have released the code for the existing algorithms: FedAvg, FedProx, FedAvgM, and FedAdam. 
 
 **[2024. 04. 29]** ☀️ We are thrilled to present our official PyTorch implementation for FedACG.
 
 
-## Running 🏃‍
+## 🏃 Running
 
    ### Dependencies
    We tested the codes in the following environments but other versions may also be compatible
@@ -71,22 +71,22 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
    
    ### FedACG training
    
-   **CIFAR-100, 100 clients, Dirichlet (0.3) split, 5% participation.**
+   **CIFAR-100, 100 clients, Dirichlet (0.3) split, 5% participation:**
    ~~~
    CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True trainer.local_lr_decay=0.995 
    ~~~
 
-   **CIFAR-100, 500 clients, Dirichlet (0.3) split, 2% participation.**
+   **CIFAR-100, 500 clients, Dirichlet (0.3) split, 2% participation:**
    ~~~
    CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=cifar100 trainer.num_clients=500 split.alpha=0.3 trainer.participation_rate=0.02 batch_size=10 wandb=True trainer.local_lr_decay=0.995 
    ~~~
 
-   **Tiny-ImageNet, 100 clients, Dirichlet (0.3) split, 5% participation.**
+   **Tiny-ImageNet, 100 clients, Dirichlet (0.3) split, 5% participation:**
    ~~~
    CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=tinyimagenet trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=100 wandb=True trainer.local_lr_decay=0.995 
    ~~~
 
-   **Tiny-ImageNet, 500 clients, Dirichlet (0.3) split, 2% participation**
+   **Tiny-ImageNet, 500 clients, Dirichlet (0.3) split, 2% participation:**
    ~~~
    CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=tinyimagenet trainer.num_clients=500 split.alpha=0.3 trainer.participation_rate=0.02 batch_size=20 wandb=True trainer.local_lr_decay=0.995 
    ~~~
@@ -95,7 +95,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
    
    We use multiprocessing in Pytorch. To train 5 clients for each training round with 3 GPUs:
    
-   **CIFAR-100, 100 clients, Dirichlet (0.3) split, 5% participation.**
+   **CIFAR-100, 100 clients, Dirichlet (0.3) split, 5% participation:**
    ~~~
    CUDA_VISIBLE_DEVICES=0,1,2 python federated_train.py multiprocessing=True main_gpu=0 server=FedACG client=prox exp_name=FedACG dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 wandb=True trainer.local_lr_decay=0.995
    ~~~
@@ -106,7 +106,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
 [//]: # (   We also provide code to run FedAvg, FedProx, FedAdam, FedAvgM, FedDyn, FedDecorr, FedLC, FedNTD, FedMLB algorithms.)
    We also provide code to run FedAvg, FedProx, FedAdam, FedAvgM algorithms. <br>
 
-   **CIFAR-100, 100 clients, Dirichlet (0.3) split, 5% participation.**
+   **CIFAR-100, 100 clients, Dirichlet (0.3) split, 5% participation:**
 
  - **FedAvg** -- [Communication-Efficient Learning of Deep Networks from Decentralized Data](https://arxiv.org/abs/1602.05629), in *AISTATS*, 2017.
     ~~~
@@ -166,7 +166,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
 [//]: # (    ~~~)
  
 
-## Citation 📝
+## 📝 Citation 
 
 If you use this code in a publication, please cite our paper.
 
