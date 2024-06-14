@@ -33,8 +33,6 @@ We also regularize local updates by aligning each client with the overshot globa
 We provide the theoretical convergence rate of our algorithm and demonstrate remarkable performance gains in terms of accuracy and communication efficiency compared to the state-of-the-art methods, especially with low client participation rates.
 
 ## News 🗞️‍
-<p style="margin-top: -5px;"> </p>
-<hr style="margin-top: 0px; margin-bottom: -5px;">
 
 **[2024. 06. 14]** 🛗 We now can perform FL training in parallel and have released the code for the existing algorithms: FedAvg, FedProx, FedAvgM, and FedAdam. 
 
@@ -42,8 +40,6 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
 
 
 ## Running 🏃‍
-<p style="margin-top: -5px;"> </p>
-<hr style="margin-top: 0px; margin-bottom: -5px;">
 
    ### Dependencies
    We tested the codes in the following environments but other versions may also be compatible
@@ -171,9 +167,6 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
  
 
 ## Citation 📝
-
-<p style="margin-top: -5px;"> </p>
-<hr style="margin-top: 0px; margin-bottom: -5px;">
 
 If you use this code in a publication, please cite our paper.
 
