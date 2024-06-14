@@ -1,0 +1,40 @@
+
+{
+  'CIFAR10':
+    {
+      'imsize': 32,
+      'mean': [0.4914,0.4822,0.4465],
+      'std': [0.2023,0.1994,0.2010],
+      'num_classes': 10
+    },
+  'CIFAR100':
+    {
+      'imsize': 32,
+      'mean': [0.5071,0.4867,0.4408],
+      'std': [0.2675,0.2565,0.2761],
+      'num_classes': 100
+    },
+  'TinyImageNet':
+    {
+      'imsize': 64,
+      'mean': [0.4802,0.4481,0.3975],
+      'std': [0.2770,0.2691,0.2821],
+      'num_classes': 200
+    },
+  'tinyimagenet':
+    {
+      'imsize': 64,
+      'mean': [0.4802,0.4481,0.3975],
+      'std': [0.2770,0.2691,0.2821],
+      'num_classes': 200
+    },
+    'leaf_celeba':
+    {
+    },
+    'leaf_femnist':
+    {
+    },
+    'shakespeare':
+    {
+    },
+}

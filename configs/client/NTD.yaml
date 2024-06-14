@@ -1,0 +1,12 @@
+## Client ##
+type: Client
+
+
+  
+NTD:
+  weight: 0.3
+  T : 1
+
+ce_loss:
+  weight: 0.7 #It should be 1 - NTD.weight
+

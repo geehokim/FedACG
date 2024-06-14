@@ -1,0 +1,14 @@
+## Client ##
+type: Client_Dyn
+
+ce_loss:
+  weight: 1
+
+prox_loss:
+  weight: 0
+
+      
+Dyn:
+  weight: 1
+  alpha: 0.1
+

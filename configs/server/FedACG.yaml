@@ -1,0 +1,4 @@
+## Server ##
+type: ServerM
+momentum: 0.85
+FedACG: True

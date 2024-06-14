@@ -1,0 +1,4 @@
+## Client ##
+type: Client
+ce_loss:
+  weight: 1

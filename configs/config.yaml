@@ -1,0 +1,66 @@
+
+#################### Default Setup ####################
+wandb: False
+seed: 0
+enable_benchmark: False
+use_amp: True
+multiprocessing: False
+main_gpu: '1'
+num_workers: 0
+pin_memory: True
+refactoring: True
+verbose: False
+# method_name: FedAvg
+remark: ""
+
+checkpoint_path: './checkpoints'
+exp_name: base
+output_model_path: 'res18.pt'
+save_freq: 1000
+batch_size: 50
+save_test: False 
+
+## Resume
+load_model_path: False      # ====> may be like ./checkpoints/CIFAR100/iid/iid_base/res18.pt. use command line +load_model_path=(path)
+wandb_resume_id: False
+
+
+###### wandb && logging ######
+project: "FedACG"
+log_dir: './checkpoints' 
+
+
+#################### Data Split ####################
+split:
+  mode: 'dirichlet'
+  alpha: 0.3
+  class_per_client: 0 # only for skew mode
+  unbalanced: False
+  overlap_ratio: 0.0
+  create_client_dataset: False
+
+#################### Optimizer ####################
+optimizer:
+  name: sgd
+  momentum: 0.0
+  wd: 1e-3
+
+
+#################### Eval ####################
+eval:
+  freq: 1
+  batch_size: 128
+
+analysis: False
+
+
+defaults:
+  - trainer: base
+  - client: base
+  - evaler: base
+  - dataset: cifar100
+  - server: base
+  - model: resnet18
+  - override hydra/job_logging: colorlog_custom
+  - override hydra/hydra_logging: colorlog
+

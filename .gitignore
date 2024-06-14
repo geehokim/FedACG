@@ -1,0 +1,7 @@
+wandb
+*/__pycache__/
+*.pyc
+checkpoints/**
+*/.ipynb_checkpoints/
+__pycache__/
+

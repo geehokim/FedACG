@@ -1,0 +1,7 @@
+- client=Dyn
+- server.type=ServerDyn
+- trainer.type=Trainer_Dyn
+- exp_name=Dyn
+- multiprocessing=False
+- split.alpha=0.3
+- dataset=cifar100

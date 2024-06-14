@@ -1,0 +1,9 @@
+## Client ##
+type: Client
+
+ce_loss:
+  weight: 1
+
+decorr_loss:
+  weight: 0.01
+  

@@ -1,0 +1,10 @@
+## Client ##
+type: Client
+ce_loss:
+  weight: 1
+
+prox_loss:
+  weight: 1e-3 
+
+
+  

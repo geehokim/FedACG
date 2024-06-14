@@ -1,0 +1,11 @@
+## Client ##
+type: Client
+
+ce_loss:
+  weight: 0
+
+LC:
+  weight: 1
+  tau: 1
+  
+      
