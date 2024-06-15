@@ -140,7 +140,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
     python federated_train.py client=MLB server=base exp_name=FedMLB dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True model=resnet18_MLB
     ~~~
 
-- **FedNTD** -- [Preservation of the Global Knowledge by Not-True Distillation in Federated Learning](https://arxiv.org/abs/2106.03097);, in *NeurIPS*, 2022.
+- **FedNTD** -- [Preservation of the Global Knowledge by Not-True Distillation in Federated Learning](https://arxiv.org/abs/2106.03097), in *NeurIPS*, 2022.
     ~~~
     python federated_train.py client=NTD server=base exp_name=FedNTD dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True 
     ~~~
