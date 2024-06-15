@@ -114,7 +114,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
     ~~~
  - **FedProx** -- [Federated Optimization in Heterogeneous Networks](https://arxiv.org/abs/1602.05629), in *MLSys*, 2020.
     ~~~
-    python federated_train.py client=prox server=base exp_name=FedProx dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True
+    python federated_train.py client=Prox server=base exp_name=FedProx dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True
     ~~~
  - **FedAdam** -- [Adaptive Federated Optimization](https://arxiv.org/pdf/2003.00295), in *ICLR*, 2021.
     ~~~
