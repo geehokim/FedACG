@@ -8,6 +8,6 @@ MLB:
   branch_level: [0,1,2,3,4]
   branch_cls_weight : 1
   branch_kl_weight : 1
-  T : 1
+  Temp : 1
 
       

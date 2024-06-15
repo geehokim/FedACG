@@ -73,7 +73,7 @@ class Trainer():
 
         self.clients: List[Client] = [client_type(self.args, client_index=c, model=copy.deepcopy(self.model)) for c in range(self.args.trainer.num_clients)]
         self.server = server
-        if self.args.server.momentum > 0:
+        if self.args.server.momentum > 0 or self.args.client.get('Dyn'):
             self.server.set_momentum(self.model)
 
         self.datasets = datasets
@@ -97,6 +97,11 @@ class Trainer():
         if self.args.get('load_model_path'):
             self.load_model()
 
+        if self.args.client.get('Dyn'):
+            local_g = copy.deepcopy(self.model.state_dict())
+            for key in local_g.keys():
+                local_g[key] = torch.zeros_like(local_g[key]).to('cpu')
+            self.past_local_deltas = {net_i: copy.deepcopy(local_g) for net_i in range(self.num_clients)}
 
 
     def local_update(self, device, task_queue, result_queue):
@@ -124,8 +129,10 @@ class Trainer():
                 'global_epoch': task['global_epoch'],
                 'trainer': self,
             }
+            if self.args.client.get('Dyn'):
+                setup_inputs['past_local_deltas'] = self.past_local_deltas
+                setup_inputs['user'] = task['client_idx']
             client.setup(**setup_inputs)
-
             # Local Training
             local_model, local_loss_dict = client.local_train(global_epoch=task['global_epoch'])
             result_queue.put((local_model, local_loss_dict))

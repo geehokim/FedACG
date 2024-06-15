@@ -1,5 +1,5 @@
 ## Client ##
-type: Client_Dyn
+type: Client
 
 ce_loss:
   weight: 1

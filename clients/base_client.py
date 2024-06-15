@@ -42,6 +42,7 @@ class Client():
     def setup(self, state_dict, device, local_dataset, local_lr, global_epoch, trainer, **kwargs):
 
         self._update_model(state_dict)
+        self._update_global_model(state_dict)
         self.device = device
 
         if self.args.dataset.num_instances > 0:
@@ -62,7 +63,7 @@ class Client():
         if global_epoch == 0:
             logger.info(f"Class counts : {self.class_counts}")
 
-        
+        #For FedLC
         if self.args.client.get('LC'):
             self.class_stats = {
             'ratio': None,
@@ -78,6 +79,12 @@ class Client():
             self.label_distrib = torch.zeros(len(local_dataset.dataset.classes), device=self.device)
             for key in sorted_class_dict:
                 self.label_distrib[int(key)] = sorted_class_dict[key]
+
+        #For FedDyn
+        if self.args.client.get('Dyn'):
+            self.local_deltas = (kwargs['past_local_deltas'])
+            self.user = kwargs['user']
+            self.local_delta = copy.deepcopy(self.local_deltas[self.user])
 
 
         
@@ -98,8 +105,10 @@ class Client():
         }
         if self.args.client.get('prox_loss'):
             weights['prox'] = self.args.client.prox_loss.weight
+
         if self.args.client.get('LC'):
             weights['LC'] = self.args.client.LC.weight
+
         if self.args.client.get('decorr_loss'):
             weights['decorr'] = self.args.client.decorr_loss.weight
 
@@ -110,6 +119,9 @@ class Client():
         if self.args.client.get('NTD'):
             weights['NTD'] = self.args.client.NTD.weight
             weights["cls"] = 1-self.args.client.NTD.weight
+
+        if self.args.client.get('Dyn'):
+            weights['Dyn'] = self.args.client.Dyn.weight
         return weights
 
     def local_train(self, global_epoch, **kwargs):
@@ -137,9 +149,9 @@ class Client():
 
                 with autocast(enabled=self.args.use_amp):
                     losses = self._algorithm(images, labels)
-                    for loss_key in losses:
-                        if loss_key not in self.weights.keys():
-                            self.weights[loss_key] = 0
+                    # for loss_key in losses:
+                    #     if loss_key not in self.weights.keys():
+                    #         self.weights[loss_key] = 0
                     loss = sum([self.weights[loss_key]*losses[loss_key] for loss_key in losses])
 
                 try:
@@ -163,8 +175,16 @@ class Client():
         self.model.to('cpu')
         self.global_model.to('cpu')
         loss_dict = {
-            f'loss/{self.args.dataset.name}/cls': loss_meter.avg,
+            f'loss/{self.args.dataset.name}': loss_meter.avg,
         }
+
+        if self.args.client.get('Dyn'):
+            with torch.no_grad():
+                fixed_params = {n:p for n,p in self.global_model.named_parameters()}
+                for n, p in self.model.named_parameters():
+                    self.local_deltas[self.user][n] = (self.local_delta[n] - self.args.client.Dyn.alpha * (p - fixed_params[n]).detach().clone().to('cpu'))
+
+
         gc.collect()
         
         return self.model.state_dict(), loss_dict
@@ -177,12 +197,12 @@ class Client():
         cls_loss = self.criterion(results["logit"], labels)
         losses["cls"] = cls_loss
         ## Weight L2 loss
-        prox_loss = 0
-        fixed_params = {n:p for n,p in self.global_model.named_parameters()}
-        for n, p in self.model.named_parameters():
-            prox_loss += ((p-fixed_params[n].detach())**2).sum()  
-
-        losses["prox"] = prox_loss
+        if self.args.client.get('prox_loss'):
+            prox_loss = 0
+            fixed_params = {n:p for n,p in self.global_model.named_parameters()}
+            for n, p in self.model.named_parameters():
+                prox_loss += ((p-fixed_params[n].detach())**2).sum()  
+            losses["prox"] = prox_loss
 
         #FedLC
         if self.args.client.get('LC'):
@@ -202,26 +222,34 @@ class Client():
 
             for l in range(self.num_layers):
                 if l in MLB_args.branch_level:         
-                    local_feature_l = results[f"layer{l}"]
-                    global_results = self.global_model(local_feature_l, mlb_level=l+1)
+                    global_results = self.global_model(results[f"layer{l}"], mlb_level=l+1)
                     cls_branch.append(self.criterion(global_results["logit"], labels))
-                    kl_branch.append(KD(global_results["logit"], results["logit"], T=MLB_args.T))
-
-
+                    kl_branch.append(KD(global_results["logit"], results["logit"], T=MLB_args.Temp))
             losses["MLB_branch_cls"] = sum(cls_branch)/len(cls_branch)
             losses["MLB_branch_kl"] = sum(kl_branch)/len(kl_branch)
+            del global_results
 
         #FedNTD
         if self.args.client.get("NTD"):
             with torch.no_grad():
                 global_results = self.global_model(images)
-                ## Exclude GT prediction
             batch_size = labels.size(0)
             idxs = torch.arange(results['logit'].size(1)).unsqueeze(0).repeat(batch_size, 1)
             not_true_idx = idxs.to(self.device) != labels.unsqueeze(1)
             not_true_logits = results['logit'][not_true_idx].view(batch_size, results['logit'].size(1) - 1)
             not_true_logits_global = global_results['logit'][not_true_idx].view(batch_size, results['logit'].size(1) - 1)
-            losses["NTD"] = KD(not_true_logits_global, not_true_logits, T=self.args.client.NTD.T)
+            losses["NTD"] = KD(not_true_logits_global, not_true_logits, T=self.args.client.NTD.Temp)
+            del global_results
+
+        #FedDyn
+        if self.args.client.get('Dyn'):
+            lg_loss = 0
+            for n, p in self.model.named_parameters():
+                p = torch.flatten(p)
+                local_d = self.local_delta[n].detach().clone().to(self.device)
+                local_grad = torch.flatten(local_d)
+                lg_loss += (p * local_grad.detach()).sum()
+            losses["Dyn"] = - lg_loss + 0.5 * self.args.client.Dyn.alpha * prox_loss
 
         del results
         return losses
