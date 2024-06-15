@@ -125,27 +125,27 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
     python federated_train.py client=base server=FedAvgM exp_name=FedAvgM dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True
     ~~~
 
- - **FedDyn** -- [Federated Learning Based on Dynamic Regularization]&#40;https://openreview.net/forum?id=B7v4QMR6Z9w&#41;, in *ICLR*, 2021.
+ - **FedDyn** -- [Federated Learning Based on Dynamic Regularization](https://openreview.net/forum?id=B7v4QMR6Z9w), in *ICLR*, 2021.
     ~~~
     python federated_train.py client=Dyn server=FedDyn exp_name=FedDyn dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True 
     ~~~
 
-- **FedLC** -- [Federated Learning with Label Distribution Skew via Logits Calibration]&#40;https://arxiv.org/abs/2209.00189&#41;, in *ICML*, 2022.
+- **FedLC** -- [Federated Learning with Label Distribution Skew via Logits Calibration](https://arxiv.org/abs/2209.00189), in *ICML*, 2022.
     ~~~
     python federated_train.py client=LC server=base exp_name=FedLC dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True 
     ~~~
 
-- **FedMLB** -- [Multi-Level Branched Regularization for Federated Learning]&#40;https://arxiv.org/abs/2207.06936&#41;, in, *ICML*, 2022.
+- **FedMLB** -- [Multi-Level Branched Regularization for Federated Learning](https://arxiv.org/abs/2207.06936), in, *ICML*, 2022.
     ~~~
     python federated_train.py client=MLB server=base exp_name=FedMLB dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True model=resnet18_MLB
     ~~~
 
-- **FedNTD** -- [Preservation of the Global Knowledge by Not-True Distillation in Federated Learning]&#40;https://arxiv.org/abs/2106.03097&#41;, in *NeurIPS*, 2022.
+- **FedNTD** -- [Preservation of the Global Knowledge by Not-True Distillation in Federated Learning](https://arxiv.org/abs/2106.03097);, in *NeurIPS*, 2022.
     ~~~
     python federated_train.py client=NTD server=base exp_name=FedNTD dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True 
     ~~~
 
-- **FedDecorr** -- [Towards Understanding and Mitigating Dimensional Collapse in Heterogeneous Federated Learning]&#40;https://arxiv.org/abs/2210.00226&#41;, in *ICLR*, 2023.
+- **FedDecorr** -- [Towards Understanding and Mitigating Dimensional Collapse in Heterogeneous Federated Learning](https://arxiv.org/abs/2210.00226), in *ICLR*, 2023.
     ~~~
     python federated_train.py client=Decorr server=base exp_name=FedDecorr dataset=cifar100 trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=50 wandb=True 
     ~~~
