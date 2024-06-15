@@ -33,7 +33,7 @@ We also regularize local updates by aligning each client with the overshot globa
 We provide the theoretical convergence rate of our algorithm and demonstrate remarkable performance gains in terms of accuracy and communication efficiency compared to the state-of-the-art methods, especially with low client participation rates.
 
 ## 🌈 News 
-**[2024. 06. 15]** 🚀 We have added the code for the existing algorithms: FedDyn, FedLC, FedMLB, FedNTD and FedDecorr
+**[2024. 06. 15]** 🚀 We have added the code for the existing algorithms: FedDyn, FedLC, FedMLB, FedNTD and FedDecorr.
 
 **[2024. 06. 14]** 🛗 We now can perform FL training in parallel and have released the code for the existing algorithms: FedAvg, FedProx, FedAvgM, and FedAdam. 
 
