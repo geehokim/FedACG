@@ -133,10 +133,10 @@ class ServerDyn(Server):
     
     
 @SERVER_REGISTRY.register()
-class ServerWS(Server):    
+class ServerWSV1(Server):    
 
     def aggregate(self, local_weights, local_deltas, client_ids, model_dict, current_lr):
-        # Ver. 3
+        # Ver. 1
         for param_key in local_weights.keys():
             if ('conv' in param_key) or ('downsample.0' in param_key):
                 weight_stack = torch.stack(local_weights[param_key])
@@ -173,3 +173,28 @@ class ServerWS(Server):
         std_each = weight_each.view(nc, c_out, -1).std(dim=-1).view(nc, c_out, 1) + 1e-5
         std_total = weight_total.transpose(0, 1).contiguous().view(c_out, -1).std(dim=-1).view(1, c_out, 1) + 1e-5
         return weight_each / std_each.expand_as(weight_each) * std_total.expand_as(weight_each) + weight_each_mean.expand_as(weight_each)
+
+
+@SERVER_REGISTRY.register()
+class ServerWSV2(Server):    
+
+    def aggregate(self, local_weights, local_deltas, client_ids, model_dict, current_lr):
+        # Ver. 2
+        for param_key in local_weights.keys():
+            if ('conv' in param_key) or ('downsample.0' in param_key):
+                weight_stack = torch.stack(local_weights[param_key])
+                local_weights[param_key] = self._standardize_repair_each_client_conv(weight_stack)
+
+        C = len(client_ids)
+        for param_key in local_weights:
+            local_weights[param_key] = sum(local_weights[param_key])/C
+
+        return local_weights
+        
+    def _standardize_each_client_conv(self, conv_weight_stack): # conv_weight_stack: stacked tensor
+        weight_each_mean = conv_weight_stack.mean(dim=2, keepdim=True).mean(dim=3, keepdim=True).mean(dim=4, keepdim=True)
+        weight_each = conv_weight_stack - weight_each_mean
+        nc = conv_weight_stack.size(0)
+        c_out = conv_weight_stack.size(1)
+        std_each = weight_each.view(nc, c_out, -1).std(dim=-1).view(nc, c_out, 1, 1, 1) + 1e-5
+        return weight_each / std_each.expand_as(weight_each)
