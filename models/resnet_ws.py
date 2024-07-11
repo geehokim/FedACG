@@ -75,11 +75,11 @@ class BasicBlockWS(nn.Module):
         return out
 
 
-class BottleneckFlex(nn.Module):
+class BottleneckWS(nn.Module):
     expansion = 4
     
     def __init__(self, in_planes, planes, stride=1, use_bn_layer=False, Conv2d=WSConv2d):
-        super(BottleneckFlex, self).__init__()
+        super(BottleneckWS, self).__init__()
         self.conv1 = Conv2d(in_planes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.GroupNorm(2, planes) if not use_bn_layer else nn.BatchNorm2d(planes)
         self.conv2 = Conv2d(planes, planes, kernel_size=3,
@@ -109,13 +109,13 @@ class BottleneckFlex(nn.Module):
         return out
 
 
-class ResNet_WS(nn.Module):
+class ResNet_WSConv(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10, l2_norm=False, use_pretrained=False, use_bn_layer=False,
                  last_feature_dim=512, **kwargs):
         
         #use_pretrained means whether to use torch torchvision.models pretrained model, and use conv1 kernel size as 7
         
-        super(ResNet_WS, self).__init__()
+        super(ResNet_WSConv, self).__init__()
         self.l2_norm = l2_norm
         self.in_planes = 64
         conv1_kernel_size = 3
@@ -124,7 +124,7 @@ class ResNet_WS(nn.Module):
 
         Conv2d = self.get_conv()
         Linear = self.get_linear()   
-        self.conv1 = Conv2d(3, 64, kernel_size=conv1_kernel_size,
+        self.conv1 = WSConv2d(3, 64, kernel_size=conv1_kernel_size,
                                stride=1, padding=1, bias=False)
         self.bn1 = nn.GroupNorm(2, 64) if not use_bn_layer else nn.BatchNorm2d(64) 
         
@@ -202,7 +202,7 @@ class ResNet_WS(nn.Module):
         self.load_state_dict(state_dict)
 
 
-class ResNet_GN(ResNet_Flex):
+class ResNet_WS(ResNet_WSConv):
 
     def forward_layer(self, layer, x, no_relu=True):
 
@@ -303,7 +303,7 @@ class ResNet_GN(ResNet_Flex):
         return results
 
 @ENCODER_REGISTRY.register()
-class ResNet18_GN(ResNet_GN):
+class ResNet18_WS(ResNet_WS):
     
     def __init__(self, args: DictConfig, num_classes: int = 10, **kwargs):
         super().__init__(BasicBlockWS, [2, 2, 2, 2], num_classes=num_classes, **kwargs
@@ -312,7 +312,7 @@ class ResNet18_GN(ResNet_GN):
                          )
 
 @ENCODER_REGISTRY.register()
-class ResNet34_GN(ResNet_GN):
+class ResNet34_WS(ResNet_WS):
 
     def __init__(self, args: DictConfig, num_classes: int = 10, **kwargs):
         super().__init__(BasicBlockWS, [3, 4, 6, 3], num_classes=num_classes, **kwargs
