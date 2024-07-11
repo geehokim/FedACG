@@ -7,29 +7,35 @@ Reference:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
 import torchvision
+from utils import *
 from models.build import ENCODER_REGISTRY
+from typing import Dict
+from omegaconf import DictConfig
 
+import logging
+logger = logging.getLogger(__name__)
 
-class BasicBlock(nn.Module):
+class BasicBlockFlex(nn.Module):
     expansion = 1
+    min_groups = 32
 
     def __init__(self, in_planes, planes, stride=1, use_bn_layer=False, Conv2d=nn.Conv2d):
-        super(BasicBlock, self).__init__()
+        super(BasicBlockFlex, self).__init__()
+        num_groups = min(self.min_groups, self.expansion * planes // 4)
         self.conv1 = Conv2d(
             in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn1 = nn.GroupNorm(2, planes) if not use_bn_layer else nn.BatchNorm2d(planes) 
+        self.bn1 = nn.GroupNorm(num_groups, planes) if not use_bn_layer else nn.BatchNorm2d(planes) 
         self.conv2 = Conv2d(planes, planes, kernel_size=3,
                                stride=1, padding=1, bias=False)
-        self.bn2 = nn.GroupNorm(2, planes) if not use_bn_layer else nn.BatchNorm2d(planes) 
+        self.bn2 = nn.GroupNorm(num_groups, planes) if not use_bn_layer else nn.BatchNorm2d(planes) 
 
         self.downsample = nn.Sequential()
         if stride != 1 or in_planes != self.expansion*planes:
             self.downsample = nn.Sequential(
                 Conv2d(in_planes, self.expansion*planes,
                           kernel_size=1, stride=stride, bias=False),
-                nn.GroupNorm(2, self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(self.expansion*planes) 
+                nn.GroupNorm(num_groups, self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(self.expansion*planes) 
             )
 
     def forward_intermediate(self, x: torch.Tensor, no_relu: bool = False) -> torch.Tensor:
@@ -54,26 +60,27 @@ class BasicBlock(nn.Module):
         return out
 
 
-class Bottleneck(nn.Module):
+class BottleneckFlex(nn.Module):
     expansion = 4
+    min_groups = 32
 
     def __init__(self, in_planes, planes, stride=1, use_bn_layer=False, Conv2d=nn.Conv2d):
-        super(Bottleneck, self).__init__()
+        super(BottleneckFlex, self).__init__()
         self.conv1 = Conv2d(in_planes, planes, kernel_size=1, bias=False)
-        self.bn1 = nn.GroupNorm(2, planes) if not use_bn_layer else nn.BatchNorm2d(planes)
+        self.bn1 = nn.GroupNorm(min(self.min_groups, planes // 4), planes) if not use_bn_layer else nn.BatchNorm2d(planes)
         self.conv2 = Conv2d(planes, planes, kernel_size=3,
                                stride=stride, padding=1, bias=False)
-        self.bn2 = nn.GroupNorm(2, planes) if not use_bn_layer else nn.BatchNorm2d(planes)
+        self.bn2 = nn.GroupNorm(min(self.min_groups, planes // 4), planes) if not use_bn_layer else nn.BatchNorm2d(planes)
         self.conv3 = Conv2d(planes, self.expansion *
                                planes, kernel_size=1, bias=False)
-        self.bn3 = nn.GroupNorm(2, self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(planes)
+        self.bn3 = nn.GroupNorm(min(self.min_groups, self.expansion*planes // 4), self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(planes)
 
         self.downsample = nn.Sequential()
         if stride != 1 or in_planes != self.expansion*planes:
             self.downsample = nn.Sequential(
                 Conv2d(in_planes, self.expansion*planes,
                           kernel_size=1, stride=stride, bias=False),
-                nn.GroupNorm(2, self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(planes)
+                nn.GroupNorm(min(self.min_groups, self.expansion*planes // 4), self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(planes)
             )
 
     def forward(self, x: torch.Tensor, no_relu: bool = False) -> torch.Tensor:
@@ -88,13 +95,13 @@ class Bottleneck(nn.Module):
         return out
 
 
-class ResNet(nn.Module):
+class ResNet_Flex(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10, l2_norm=False, use_pretrained=False, use_bn_layer=False,
                  last_feature_dim=512, **kwargs):
         
         #use_pretrained means whether to use torch torchvision.models pretrained model, and use conv1 kernel size as 7
         
-        super(ResNet, self).__init__()
+        super(ResNet_Flex, self).__init__()
         self.l2_norm = l2_norm
         self.in_planes = 64
         conv1_kernel_size = 3
@@ -105,7 +112,7 @@ class ResNet(nn.Module):
         Linear = self.get_linear()   
         self.conv1 = Conv2d(3, 64, kernel_size=conv1_kernel_size,
                                stride=1, padding=1, bias=False)
-        self.bn1 = nn.GroupNorm(2, 64) if not use_bn_layer else nn.BatchNorm2d(64) 
+        self.bn1 = nn.GroupNorm(min(32, 64 // 4), 64) if not use_bn_layer else nn.BatchNorm2d(64) 
         
         self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1, use_bn_layer=use_bn_layer)
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2, use_bn_layer=use_bn_layer)
@@ -180,3 +187,122 @@ class ResNet(nn.Module):
                 state_dict[key]=state_dict[online]
         self.load_state_dict(state_dict)
 
+
+class ResNet_GN(ResNet_Flex):
+
+    def forward_layer(self, layer, x, no_relu=True):
+
+        if isinstance(layer, nn.Linear):
+            x = F.adaptive_avg_pool2d(x, 1)
+            x = x.view(x.size(0), -1)
+            out = layer(x)
+        else:
+            if no_relu:
+                out = x
+                for sublayer in layer[:-1]:
+                    out = sublayer(out)
+                out = layer[-1](out, no_relu=no_relu)
+            else:
+                out = layer(x)
+
+        return out
+    
+    def forward_layer_by_name(self, layer_name, x, no_relu=True):
+        layer = getattr(self, layer_name)
+        return self.forward_layer(layer, x, no_relu)
+
+    def forward_layer0(self, x: torch.Tensor, no_relu: bool = False) -> torch.Tensor:
+        out0 = self.bn1(self.conv1(x))
+        if not no_relu:
+            out0 = F.relu(out0)
+        return out0
+
+    def freeze_backbone(self):
+        for n, p in self.named_parameters():
+            if 'fc' not in n:
+            # if True:
+                p.requires_grad = False
+        logger.warning('Freeze backbone parameters (except fc)')
+        return
+    
+    def forward(self, x: torch.Tensor, no_relu: bool = True) -> Dict[str, torch.Tensor]:
+        results = {}
+
+        if no_relu:
+            out0 = self.bn1(self.conv1(x))
+            results['layer0'] = out0
+            out0 = F.relu(out0)
+
+            out = out0
+            for i, sublayer in enumerate(self.layer1):
+                sub_norelu = (i == len(self.layer1) - 1)
+                out = sublayer(out, no_relu=sub_norelu)
+            results['layer1'] = out
+            out = F.relu(out)
+
+            for i, sublayer in enumerate(self.layer2):
+                sub_norelu = (i == len(self.layer2) - 1)
+                out = sublayer(out, no_relu=sub_norelu)
+            results['layer2'] = out
+            out = F.relu(out)
+
+            for i, sublayer in enumerate(self.layer3):
+                sub_norelu = (i == len(self.layer3) - 1)
+                out = sublayer(out, no_relu=sub_norelu)
+            results['layer3'] = out
+            out = F.relu(out)
+
+            for i, sublayer in enumerate(self.layer4):
+                sub_norelu = (i == len(self.layer4) - 1)
+                out = sublayer(out, no_relu=sub_norelu)
+            results['layer4'] = out
+            out = F.relu(out)
+            
+        else:
+            out0 = self.bn1(self.conv1(x))
+            out0 = F.relu(out0)
+            results['layer0'] = out0
+
+            out = out0
+            out = self.layer1(out)
+            results['layer1'] = out
+            out = self.layer2(out)
+            results['layer2'] = out
+            out = self.layer3(out)
+            results['layer3'] = out
+            out = self.layer4(out)
+            results['layer4'] = out
+            
+
+        out = F.adaptive_avg_pool2d(out, 1)
+        out = out.view(out.size(0), -1)
+
+        if self.logit_detach:
+            logit = self.fc(out.detach())
+        else:
+            logit = self.fc(out)
+
+        results['feature'] = out
+        results['logit'] = logit
+        results['layer5'] = logit
+
+        return results
+
+@ENCODER_REGISTRY.register()
+class ResNet18_GN(ResNet_GN):
+    
+    def __init__(self, args: DictConfig, num_classes: int = 10, **kwargs):
+        super().__init__(BasicBlockFlex, [2, 2, 2, 2], num_classes=num_classes, **kwargs
+                        #  l2_norm=args.model.l2_norm,
+                        #  use_pretrained=args.model.pretrained, use_bn_layer=args.model.use_bn_layer
+                         )
+
+@ENCODER_REGISTRY.register()
+class ResNet34_GN(ResNet_GN):
+
+    def __init__(self, args: DictConfig, num_classes: int = 10, **kwargs):
+        super().__init__(BasicBlockFlex, [3, 4, 6, 3], num_classes=num_classes, **kwargs
+                        #  l2_norm=args.model.l2_norm,
+                        #  use_pretrained=args.model.pretrained, use_bn_layer=args.model.use_bn_layer
+                         )
+     

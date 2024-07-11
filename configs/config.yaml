@@ -53,14 +53,14 @@ eval:
 
 analysis: False
 
-
 defaults:
+  - _self_
   - trainer: base
   - client: base
   - evaler: base
   - dataset: cifar100
   - server: base
   - model: resnet18
-  - override hydra/job_logging: colorlog_custom
-  - override hydra/hydra_logging: colorlog
+  # - override hydra/job_logging: colorlog_custom
+  # - override hydra/hydra_logging: colorlog
 

@@ -18,7 +18,6 @@ def get_server_type(args):
     
     return server_type
 
-
 def build_server(args):
     server_type = get_server_type(args)
     server = server_type(args)

@@ -154,7 +154,10 @@ class Trainer():
             # start all processes
             for p in processes:
                 p.start()
-
+                
+        # # FedWS lookahead init
+        # if self.args.server.get('FedWS'):
+        #     self.model= copy.deepcopy(self.server.FedWS_init_norm(copy.deepcopy(self.model)))
 
         for epoch in range(self.start_round, self.global_rounds):
 
@@ -228,7 +231,6 @@ class Trainer():
 
             logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
 
-
             # Server-side
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
                                                               selected_client_ids, copy.deepcopy(global_state_dict), current_lr)
@@ -249,7 +251,6 @@ class Trainer():
 
             self.wandb_log(wandb_dict, step=epoch)
             gc.collect()
-
 
         if self.args.multiprocessing:
             # Terminate Processes
