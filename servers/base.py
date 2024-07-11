@@ -141,10 +141,6 @@ class ServerWSV1(Server):
             if ('conv' in param_key) or ('downsample.0' in param_key):
                 weight_stack = torch.stack(local_weights[param_key])
                 local_weights[param_key] = self._standardize_repair_each_client_conv(weight_stack)
-                    
-            if 'fc.weight' in param_key:
-                weight_stack = torch.stack(local_weights[param_key])
-                local_weights[param_key] = self._standardize_repair_each_client_linear(weight_stack)
 
         C = len(client_ids)
         for param_key in local_weights:
