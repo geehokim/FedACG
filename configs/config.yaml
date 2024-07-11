@@ -24,11 +24,9 @@ save_test: False
 load_model_path: False      # ====> may be like ./checkpoints/CIFAR100/iid/iid_base/res18.pt. use command line +load_model_path=(path)
 wandb_resume_id: False
 
-
 ###### wandb && logging ######
 project: "FedACG"
 log_dir: './checkpoints' 
-
 
 #################### Data Split ####################
 split:
@@ -44,7 +42,6 @@ optimizer:
   name: sgd
   momentum: 0.0
   wd: 1e-3
-
 
 #################### Eval ####################
 eval:
