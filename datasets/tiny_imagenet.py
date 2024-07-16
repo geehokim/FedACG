@@ -189,7 +189,6 @@ class TinyImageNet(data.Dataset):
             self.samples = np.random.permutation(self.samples)[:self.samples_num]
 
         if self.preload:
-
             file_name_img = root + "/" + self.split + "_img.pickle"
             file_name_label = root + "/" + self.split + "_label.pickle"
             try:
@@ -257,8 +256,6 @@ class TinyImageNet(data.Dataset):
             self.targets = np.array([i[1] for i in self.samples])
             self.classes = set(self.targets)
             self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
-
-
 
     def __len__(self):
         return len(self.data)
@@ -342,8 +339,6 @@ def tiny_noniid(dataset, num_users):
             dict_users[i] = set(np.concatenate(
                 (dict_users[i], idxs[rand * num_imgs:(rand + 1) * num_imgs]), axis=0))
     return dict_users
-
-
 
 def tiny_dirichlet_unbalanced(dataset, n_nets, alpha=0.5):
     '''
