@@ -1,5 +1,5 @@
 ## Model ##
-name: "ResNet18_GN"
+name: "ResNet18"
 pretrained: False
 l2_norm: False
 use_bn_layer: True
