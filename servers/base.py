@@ -49,7 +49,10 @@ class ServerM(Server):
     def FedACG_lookahead(self, model):
         sending_model_dict = copy.deepcopy(model.state_dict())
         for key in self.global_momentum.keys():
-            sending_model_dict[key] += self.args.server.momentum * self.global_momentum[key]
+            if 'num_batches_tracked' in key:
+                sending_model_dict[key] = self.global_momentum[key]
+            else:
+                sending_model_dict[key] += self.args.server.momentum * self.global_momentum[key]
 
         model.load_state_dict(sending_model_dict)
         return copy.deepcopy(model)
