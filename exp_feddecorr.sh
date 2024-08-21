@@ -6,4 +6,4 @@ if [ ${DATASET} = "tinyimagenet" ];then
 fi
 LR_DECAY=0.998
 
-python federated_train.py server=base client=Decorr exp_name=FedDecorrWS dataset=${DATASET} trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=${BATCH_SIZE} wandb=True trainer.local_lr_decay=${LR_DECAY}
+python federated_train.py server=base client=Decorr exp_name=FedDecorr dataset=${DATASET} trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=${BATCH_SIZE} wandb=True trainer.local_lr_decay=${LR_DECAY}
