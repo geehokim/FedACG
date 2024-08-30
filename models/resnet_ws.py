@@ -22,7 +22,11 @@ class WSConv2d(nn.Conv2d):
                  padding=0, dilation=1, groups=1, bias=True):
         super(WSConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
                  padding, dilation, groups, bias)
+<<<<<<< HEAD
         self.rho = 5e-5
+=======
+        self.rho=1e-4
+>>>>>>> 9f4aecb8647e254a434f593421288990a25fe39e
 
     def forward(self, x):
         weight = self.weight
@@ -31,8 +35,13 @@ class WSConv2d(nn.Conv2d):
         weight = weight - weight_mean
         std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
         weight = weight / std.expand_as(weight) * self.rho
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9f4aecb8647e254a434f593421288990a25fe39e
         return F.conv2d(x, weight, self.bias, self.stride,
                         self.padding, self.dilation, self.groups)
+
 
 class BasicBlockWS(nn.Module):
     expansion = 1
