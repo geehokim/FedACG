@@ -24,8 +24,24 @@ class Server():
     
     def aggregate(self, local_weights, local_deltas, client_ids, model_dict, current_lr):
         C = len(client_ids)
+        # temp_mean = []
+        # temp_std = []
+        # temp_dev = []
         for param_key in local_weights:
             local_weights[param_key] = sum(local_weights[param_key])/C
+        #     if 'conv' in param_key:
+        #         weight = local_weights[param_key]
+        #         weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2,
+        #                                 keepdim=True).mean(dim=3, keepdim=True)
+        #         weight = weight - weight_mean
+        #         std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
+        #         dev = sum([p.pow(2) for p in local_deltas[param_key]])/C
+        #         temp_mean.append(weight_mean.abs().mean().item())
+        #         temp_std.append(std.mean().item())
+        #         temp_dev.append(torch.sqrt(dev.mean()).item())
+        # print(temp_mean)
+        # print(temp_std)
+        # print(temp_dev)
         return local_weights
     
 
