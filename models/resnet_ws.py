@@ -22,7 +22,7 @@ class WSConv2d(nn.Conv2d):
                  padding=0, dilation=1, groups=1, bias=True):
         super(WSConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
                  padding, dilation, groups, bias)
-        self.rho=1e-4
+        self.rho=1
 
     def forward(self, x):
         weight = self.weight
