@@ -19,14 +19,10 @@ logger = logging.getLogger(__name__)
 class WSConv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True):
+                 padding=0, dilation=1, groups=1, bias=True, rho=1.):
         super(WSConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
                  padding, dilation, groups, bias)
-<<<<<<< HEAD
-        self.rho = 5e-5
-=======
-        self.rho=1e-4
->>>>>>> 9f4aecb8647e254a434f593421288990a25fe39e
+        self.rho = rho
 
     def forward(self, x):
         weight = self.weight
@@ -35,12 +31,11 @@ class WSConv2d(nn.Conv2d):
         weight = weight - weight_mean
         std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
         weight = weight / std.expand_as(weight) * self.rho
-<<<<<<< HEAD
-=======
-
->>>>>>> 9f4aecb8647e254a434f593421288990a25fe39e
         return F.conv2d(x, weight, self.bias, self.stride,
                         self.padding, self.dilation, self.groups)
+        
+    def set_rho(self, rho):
+        self.rho = rho
 
 
 class BasicBlockWS(nn.Module):
@@ -62,6 +57,12 @@ class BasicBlockWS(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.GroupNorm(2, self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(self.expansion*planes) 
             )
+            
+    def set_rho(self, rho):
+        self.conv1.set_rho(rho)
+        self.conv2.set_rho(rho)
+        if len(self.downsample) > 0:
+            self.downsample[0].set_rho(rho)
 
     def forward_intermediate(self, x: torch.Tensor, no_relu: bool = False) -> torch.Tensor:
         out_i = self.bn1(self.conv1(x))
@@ -106,6 +107,13 @@ class BottleneckWS(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 nn.GroupNorm(2, self.expansion*planes) if not use_bn_layer else nn.BatchNorm2d(planes)
             )
+            
+    def set_rho(self, rho):
+        self.conv1.set_rho(rho)
+        self.conv2.set_rho(rho)
+        self.conv3.set_rho(rho)
+        if len(self.downsample) > 0:
+            self.downsample[0].set_rho(rho)
 
     def forward(self, x: torch.Tensor, no_relu: bool = False) -> torch.Tensor:
         out = F.relu(self.bn1(self.conv1(x)))
@@ -132,7 +140,6 @@ class ResNet_WSConv(nn.Module):
         if use_pretrained:
             conv1_kernel_size = 7
 
-        Conv2d = self.get_conv()
         Linear = self.get_linear()   
         self.conv1 = WSConv2d(3, 64, kernel_size=conv1_kernel_size,
                                stride=1, padding=1, bias=False)
@@ -158,11 +165,14 @@ class ResNet_WSConv(nn.Module):
             self.fc = Linear(last_feature_dim * block.expansion, num_classes, bias=False)
         else:
             self.fc = Linear(last_feature_dim * block.expansion, num_classes)
-
-
-    def get_conv(self):
-        return nn.Conv2d
     
+    def set_rho(self, rho):
+        self.conv1.rho
+        self.layer1.set_rho(rho)
+        self.layer2.set_rho(rho)
+        self.layer3.set_rho(rho)
+        self.layer4.set_rho(rho)        
+
     def get_linear(self):
         return nn.Linear
 
@@ -170,7 +180,7 @@ class ResNet_WSConv(nn.Module):
         strides = [stride] + [1]*(num_blocks-1)
         layers = []
         for stride in strides:
-            layers.append(block(self.in_planes, planes, stride, use_bn_layer=use_bn_layer, Conv2d=self.get_conv()))
+            layers.append(block(self.in_planes, planes, stride, use_bn_layer=use_bn_layer, Conv2d=WSConv2d))
             self.in_planes = planes * block.expansion
         return nn.Sequential(*layers)
 
