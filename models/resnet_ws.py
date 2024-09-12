@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class WSConv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, rho=1.):
+                 padding=0, dilation=1, groups=1, bias=True, rho=1e-3):
         super(WSConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
                  padding, dilation, groups, bias)
         self.rho = rho
