@@ -25,7 +25,7 @@ load_model_path: False      # ====> may be like ./checkpoints/CIFAR100/iid/iid_b
 wandb_resume_id: False
 
 ###### wandb && logging ######
-project: "FedWS"
+project: "FedWS_5_100"
 log_dir: './checkpoints' 
 
 #################### Data Split ####################
