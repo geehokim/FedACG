@@ -1,0 +1,35 @@
+## Client ##
+type: RCLClient
+
+ce_loss:
+  weight: 1
+
+prox_loss:
+  weight: 0
+
+rcl_loss:
+  loss_type: supervised
+  topk_pos: 1
+  topk_neg: 2
+  temp: 0.05
+  pairs:
+    - name: scl
+      pos: nn
+      neg: nn
+      weight: 1
+      loss_type: supervised
+    - name: penalty
+      pos: "nn"
+      neg: "nn"
+      weight: 1
+      loss_type: unsupervised
+      neg_sample_type: intra_class_thresholding
+      threshold: 0.7
+  weight: 1
+  branch_level: [0,1,2,3,4]
+  feature_relu: False
+
+feature_align_loss:
+  weight: 0
+  align_type: cosine
+      
