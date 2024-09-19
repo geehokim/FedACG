@@ -10,4 +10,3 @@ python federated_train.py multiprocessing=True main_gpu=0 client=Dyn server=FedD
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
 batch_size=${BATCH_SIZE} wandb=True trainer.global_lr=0.01 \
 # split.mode=iid
- 
