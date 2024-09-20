@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-os.environ['CUDA_VISIBLE_DEVICES'] = "7"
+os.environ['CUDA_VISIBLE_DEVICES'] = "3"
 
 import torch
 import wandb
