@@ -6,7 +6,7 @@ if [ ${DATASET} = "tinyimagenet" ];then
 fi 
 ALPHA=0.05
 
-python3 federated_train.py client=base server=FedAvgM exp_name=FedAvgM_IID \
+python3 federated_train.py client=base server=FedAvgM exp_name=FedAvgM_"$ALPHA" \
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
 batch_size=${BATCH_SIZE} wandb=True \
-split.mode=iid
+# split.mode=iid
