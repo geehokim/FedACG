@@ -10,4 +10,3 @@ python3 federated_train.py client=NTD server=base exp_name=FedNTD_"$ALPHA" \
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
 batch_size=${BATCH_SIZE} wandb=True \
 # split.mode=iid
-
