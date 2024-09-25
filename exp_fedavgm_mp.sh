@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=0
+CUDA_VISIBLE_DEVICES=0,1
 DATASET=tinyimagenet
 BATCH_SIZE=50
 if [ ${DATASET} = "tinyimagenet" ];then
@@ -6,7 +6,7 @@ if [ ${DATASET} = "tinyimagenet" ];then
 fi 
 ALPHA=0.6
 
-python3 federated_train.py client=MLB server=base exp_name=FedMLB_"$ALPHA" \
+python3 federated_train.py client=base server=FedAvgM exp_name=FedAvgM_IID \
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
-batch_size=${BATCH_SIZE} wandb=True model=resnet18_MLB \
-# split.mode=iid
+batch_size=${BATCH_SIZE} wandb=True \
+split.mode=iid
