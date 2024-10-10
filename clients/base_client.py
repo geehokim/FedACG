@@ -86,9 +86,6 @@ class Client():
             self.user = kwargs['user']
             self.local_delta = copy.deepcopy(self.local_deltas[self.user])
 
-
-        
-
     def _update_model(self, state_dict):
         self.model.load_state_dict(state_dict)
 
