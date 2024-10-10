@@ -1,5 +1,5 @@
 CUDA_VISIBLE_DEVICES=0
-DATASET=tinyimagenet
+DATASET=cifar100
 BATCH_SIZE=50
 if [ ${DATASET} = "tinyimagenet" ];then
     BATCH_SIZE=100
