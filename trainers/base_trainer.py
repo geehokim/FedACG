@@ -161,7 +161,13 @@ class Trainer():
 
         for epoch in range(self.start_round, self.global_rounds):
 
-            self.lr_update(epoch=epoch)
+            if self.global_rounds == 1000:
+                exponent = epoch
+            elif self.global_rounds < 1000:
+                exponent = epoch * (1000 // self.global_rounds)
+            else:
+                exponent = epoch // 5
+            self.lr_update(epoch=exponent)
 
             global_state_dict = copy.deepcopy(self.model.state_dict())
             prev_model_weight = copy.deepcopy(self.model.state_dict())

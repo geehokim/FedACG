@@ -1,0 +1,3 @@
+## Model ##
+name: "VGG9_base"
+pretrained: False

@@ -11,5 +11,11 @@ from models.resnet_ws import *
 from models.MobileNet import *
 from models.SqueezeNet import *
 from models.ShuffleNet import *
+from models.VGG9WS import *
+from models.SqueezeNetWS import *
+from models.ShuffleNetWS import *
+from models.MobileNetWS import *
+from models.MobileNetV3 import *
+from models.MobileNetV3WS import *
 
 from models.build import build_encoder

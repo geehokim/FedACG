@@ -6,29 +6,52 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from models.build import ENCODER_REGISTRY
 
 
-class Fire(nn.Module):
+class WSConv2d(nn.Conv2d):
 
-    def __init__(self, in_channel, out_channel, squzee_channel):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
+                 padding=0, dilation=1, groups=1, bias=True, rho=1e-3):
+        super(WSConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
+                 padding, dilation, groups, bias)
+        self.rho = rho
+
+    def forward(self, x):
+        weight = self.weight
+        weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2,
+                                  keepdim=True).mean(dim=3, keepdim=True)
+        weight = weight - weight_mean
+        std = weight.view(weight.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
+        weight = weight / std.expand_as(weight) * self.rho
+        return F.conv2d(x, weight, self.bias, self.stride,
+                        self.padding, self.dilation, self.groups)
+        
+    def set_rho(self, rho):
+        self.rho = rho
+
+
+class FireWS(nn.Module):
+
+    def __init__(self, in_channel, out_channel, squzee_channel, rho):
 
         super().__init__()
         self.squeeze = nn.Sequential(
-            nn.Conv2d(in_channel, squzee_channel, 1, bias=False),
-            nn.GroupNorm(2,squzee_channel),
+            WSConv2d(in_channel, squzee_channel, 1, bias=False, rho=rho),
+            nn.GroupNorm(2, squzee_channel),
             nn.ReLU(inplace=True)
         )
 
         self.expand_1x1 = nn.Sequential(
-            nn.Conv2d(squzee_channel, int(out_channel / 2), 1, bias=False),
-            nn.GroupNorm(2,int(out_channel / 2)),
+            WSConv2d(squzee_channel, int(out_channel / 2), 1, bias=False, rho=rho),
+            nn.GroupNorm(2, int(out_channel / 2)),
             nn.ReLU(inplace=True)
         )
 
         self.expand_3x3 = nn.Sequential(
-            nn.Conv2d(squzee_channel, int(out_channel / 2), 3, padding=1, bias=False),
-            nn.GroupNorm(2,int(out_channel / 2)),
+            WSConv2d(squzee_channel, int(out_channel / 2), 3, padding=1, bias=False, rho=rho),
+            nn.GroupNorm(2, int(out_channel / 2)),
             nn.ReLU(inplace=True)
         )
 
@@ -44,28 +67,28 @@ class Fire(nn.Module):
 
 
 @ENCODER_REGISTRY.register()
-class SqueezeNet_base(nn.Module):
+class SqueezeNet_WS(nn.Module):
 
-    def __init__(self, args, num_classes=100 ,**kwargs):
+    def __init__(self, args, num_classes=100, rho=1e-3, **kwargs):
 
         super().__init__()
         self.stem = nn.Sequential(
-            nn.Conv2d(3, 96, 3, padding=1, bias=False),
-            nn.GroupNorm(2,96),
+            WSConv2d(3, 96, 3, padding=1, bias=False, rho=rho),
+            nn.GroupNorm(2, 96),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2, 2)
         )
 
-        self.fire2 = Fire(96, 128, 16)
-        self.fire3 = Fire(128, 128, 16)
-        self.fire4 = Fire(128, 256, 32)
-        self.fire5 = Fire(256, 256, 32)
-        self.fire6 = Fire(256, 384, 48)
-        self.fire7 = Fire(384, 384, 48)
-        self.fire8 = Fire(384, 512, 64)
-        self.fire9 = Fire(512, 512, 64)
+        self.fire2 = FireWS(96, 128, 16, rho)
+        self.fire3 = FireWS(128, 128, 16, rho)
+        self.fire4 = FireWS(128, 256, 32, rho)
+        self.fire5 = FireWS(256, 256, 32, rho)
+        self.fire6 = FireWS(256, 384, 48, rho)
+        self.fire7 = FireWS(384, 384, 48, rho)
+        self.fire8 = FireWS(384, 512, 64, rho)
+        self.fire9 = FireWS(512, 512, 64, rho)
 
-        self.conv10 = nn.Conv2d(512, num_classes, 1, bias=False)
+        self.conv10 = nn.Conv2d(512, num_classes, 1)
         self.avg = nn.AdaptiveAvgPool2d(1)
         self.maxpool = nn.MaxPool2d(2, 2)
         self.num_layers = 9
