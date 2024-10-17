@@ -12,3 +12,4 @@ nohup python3 federated_train.py client=ACG server=FedACG exp_name=FedACG_"$ALPH
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.02 \
 batch_size=${BATCH_SIZE} wandb=True trainer.local_lr_decay=${DECAY}  project="FedWS_2_100" & \
 # split.mode=iid
+
