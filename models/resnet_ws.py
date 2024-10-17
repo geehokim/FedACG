@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class WSConv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, rho=1):
+                 padding=0, dilation=1, groups=1, bias=True, rho=1e-3):
         super(WSConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
                  padding, dilation, groups, bias)
         self.rho = rho
@@ -41,7 +41,7 @@ class WSConv2d(nn.Conv2d):
 class BasicBlockWS(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1, use_bn_layer=False, rho=1):
+    def __init__(self, in_planes, planes, stride=1, use_bn_layer=False, rho=1e-3):
         super(BasicBlockWS, self).__init__()
         self.conv1 = WSConv2d(
             in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False, rho=rho)
@@ -89,7 +89,7 @@ class BasicBlockWS(nn.Module):
 class BottleneckWS(nn.Module):
     expansion = 4
     
-    def __init__(self, in_planes, planes, stride=1, use_bn_layer=False, rho=1):
+    def __init__(self, in_planes, planes, stride=1, use_bn_layer=False, rho=1e-3):
         super(BottleneckWS, self).__init__()
         self.conv1 = WSConv2d(in_planes, planes, kernel_size=1, bias=False, rho=rho)
         self.bn1 = nn.GroupNorm(2, planes) if not use_bn_layer else nn.BatchNorm2d(planes)
@@ -129,7 +129,7 @@ class BottleneckWS(nn.Module):
 
 class ResNet_WSConv(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10, l2_norm=False, use_pretrained=False, use_bn_layer=False,
-                 last_feature_dim=512, rho=1, **kwargs):
+                 last_feature_dim=512, rho=1e-3, **kwargs):
         
         #use_pretrained means whether to use torch torchvision.models pretrained model, and use conv1 kernel size as 7
         
@@ -176,7 +176,7 @@ class ResNet_WSConv(nn.Module):
     def get_linear(self):
         return nn.Linear
 
-    def _make_layer(self, block, planes, num_blocks, stride, use_bn_layer=False, rho=1):
+    def _make_layer(self, block, planes, num_blocks, stride, use_bn_layer=False, rho=1e-3):
         strides = [stride] + [1]*(num_blocks-1)
         layers = []
         for stride in strides:

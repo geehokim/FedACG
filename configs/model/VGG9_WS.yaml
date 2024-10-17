@@ -1,0 +1,4 @@
+## Model ##
+name: "VGG9_WS"
+pretrained: False
+rho: 1e-3
