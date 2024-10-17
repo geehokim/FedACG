@@ -1,0 +1,4 @@
+## Model ##
+name: "MobileNetV3_WS"
+pretrained: False
+rho: 1e-3

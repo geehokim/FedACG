@@ -1,0 +1,3 @@
+## Model ##
+name: "ShuffleNet_base"
+pretrained: False
