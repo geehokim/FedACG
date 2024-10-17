@@ -10,3 +10,4 @@ python3 federated_train.py client=Dyn server=FedDyn exp_name=FedDyn_"$ALPHA" \
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
 batch_size=${BATCH_SIZE} wandb=True \
 # split.mode=iid
+                                                                                                  
