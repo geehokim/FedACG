@@ -24,27 +24,6 @@ class Server():
     
     def aggregate(self, local_weights, local_deltas, client_ids, model_dict, current_lr):
         C = len(client_ids)
-        # temp_total = []
-        # # temp_dev = []
-        # from torch.nn import CosineSimilarity
-        # cos = CosineSimilarity(dim=1, eps=1e-10)
-        # for param_key in local_weights:
-        #     if 'conv' in param_key:
-        #         temp_layer = []
-        #         weight_list = local_weights[param_key]
-        #         delta_list = local_deltas[param_key]
-        #         for (w, d) in zip(weight_list, delta_list):
-        #             o, i, h_, w_ = w.size()
-        #             w_prev = w - d
-        #             w_mean = w_prev.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
-        #             w_prev = (w_prev - w_mean).view(o, i *h_ * w_, 1)
-        #             w_mean = w.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
-        #             w = (w - w_mean).view(o, i * h_ * w_, 1)
-        #             temp_layer.append(cos(w, w_prev).abs().mean().item())
-        #         temp_total.append(sum(temp_layer) / len(delta_list))
-        #         print(temp_layer)
-            
-        # print(temp_total)
 
         for param_key in local_weights:
             local_weights[param_key] = sum(local_weights[param_key])/C

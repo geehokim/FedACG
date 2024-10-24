@@ -1,0 +1,4 @@
+## Client ##
+type: DriftClient
+ce_loss:
+  weight: 1
