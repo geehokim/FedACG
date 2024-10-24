@@ -6,7 +6,7 @@ if [ ${DATASET} = "tinyimagenet" ];then
 fi 
 ALPHA=0.3
 
-python3 federated_train.py client=DriftBase server=base trainer=drift exp_name=FedAvg_"$ALPHA" \
+python3 federated_train.py client=DriftBase server=base trainer=drift exp_name=FedAvgWS_"$ALPHA" \
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
 batch_size=${BATCH_SIZE} wandb=True model=resnet18_WS project="client_drift" \
 # split.mode=iid
