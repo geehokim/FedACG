@@ -474,7 +474,7 @@ class DriftTrainer(Trainer):
             wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
             wandb_dict['lr'] = self.lr
             wandb_dict[f"drift/{self.args.dataset.name}"] = np.mean(drift_list) * 0.02
-            print(np.mean(drift_list) * 0.02)
+            # print(np.mean(drift_list) * 0.02)
             
             model_device = next(self.model.parameters()).device
             if self.args.eval.freq > 0 and epoch % self.args.eval.freq == 0:
