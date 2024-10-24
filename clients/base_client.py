@@ -164,6 +164,7 @@ class Client():
                 loss_meter.update(loss.item(), images.size(0))
                 time_meter.update(time.time() - end)
                 end = time.time()
+                
 
             self.scheduler.step()
         
@@ -251,4 +252,85 @@ class Client():
         del results
         return losses
 
+
+@CLIENT_REGISTRY.register()
+class DriftClient(Client):
+
+    def local_train(self, global_epoch, **kwargs):
+        self.global_epoch = global_epoch
+
+        self.model.to(self.device)
+        self.global_model.to(self.device)
+        scaler = GradScaler()
+        start = time.time()
+        loss_meter = AverageMeter('Loss', ':.2f')
+        time_meter = AverageMeter('BatchTime', ':3.1f')
+        drift = 0.
+
+        self.weights = self.get_weights(epoch=global_epoch)
+
+        if global_epoch % 50 == 0:
+            print(self.weights)
+
+        for local_epoch in range(self.args.trainer.local_epochs):
+            end = time.time()
+
+            for i, (images, labels) in enumerate(self.loader):
+                    
+                images, labels = images.to(self.device), labels.to(self.device)
+                self.model.zero_grad()
+
+                with autocast(enabled=self.args.use_amp):
+                    losses = self._algorithm(images, labels)
+                    # for loss_key in losses:
+                    #     if loss_key not in self.weights.keys():
+                    #         self.weights[loss_key] = 0
+                    loss = sum([self.weights[loss_key]*losses[loss_key] for loss_key in losses])
+
+                try:
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(self.optimizer)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), 10)
+                    scaler.step(self.optimizer)
+                    scaler.update()
+
+                except Exception as e:
+                    print(e)
+   
+                local_state_dict = self.model.state_dict()
+                global_state_dict = self.global_model.state_dict()
+                lp = []
+                gp = []
+                for param_key in local_state_dict:
+                    lp.append(local_state_dict[param_key].view(-1))
+                    gp.append(global_state_dict[param_key].view(-1))
+                lp = torch.cat(lp)
+                gp = torch.cat(gp)
+                drift += (lp - gp).pow(2).sum().item()
+
+                loss_meter.update(loss.item(), images.size(0))
+                time_meter.update(time.time() - end)
+                end = time.time()
+
+            self.scheduler.step()
+        
+        logger.info(f"[C{self.client_index}] End. Time: {end-start:.2f}s, Loss: {loss_meter.avg:.3f}")
+
+        self.model.to('cpu')
+        self.global_model.to('cpu')
+        loss_dict = {
+            f'loss/{self.args.dataset.name}': loss_meter.avg,
+        }
+
+        if self.args.client.get('Dyn'):
+            with torch.no_grad():
+                fixed_params = {n:p for n,p in self.global_model.named_parameters()}
+                for n, p in self.model.named_parameters():
+                    self.local_deltas[self.user][n] = (self.local_delta[n] - self.args.client.Dyn.alpha * (p - fixed_params[n]).detach().clone().to('cpu'))
+
+
+        gc.collect()
+        
+        return self.model.state_dict(), loss_dict, drift
+    
 
