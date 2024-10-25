@@ -217,14 +217,14 @@ def cifar_dirichlet_balanced(dataset, n_nets, alpha=0.5):
         n_train = len(dataset)
 
         min_size = 0
-        K = len(dataset.class_to_idx)
-        N = len(dataset)
+        K = len(dataset.class_to_idx)   # number of classes
+        N = len(dataset)                # total number of data
         N = y_train.shape[0]
         print(N)
         net_dataidx_map = {i: np.array([], dtype='int64') for i in range(n_nets)}
-        assigned_ids = []
+        assigned_ids = []   # assigned ids
         idx_batch = [[] for _ in range(n_nets)]
-        num_data_per_client=int(N/n_nets)
+        num_data_per_client=int(N/n_nets)   # number of data per client = N / n_nets
         for i in range(n_nets):
             weights = torch.zeros(N)
             proportions = np.random.dirichlet(np.repeat(alpha, K))

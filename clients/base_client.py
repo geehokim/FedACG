@@ -164,6 +164,7 @@ class Client():
                 loss_meter.update(loss.item(), images.size(0))
                 time_meter.update(time.time() - end)
                 end = time.time()
+                
 
             self.scheduler.step()
         
@@ -250,5 +251,3 @@ class Client():
 
         del results
         return losses
-
-

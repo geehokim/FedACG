@@ -8,7 +8,6 @@ import os
 __all__ = [ 'get_numclasses','count_label_distribution','check_data_distribution', 'get_optimizer', 'get_scheduler','modeleval','create_pth_dict']
 
 
-
 def count_label_distribution(labels,class_num:int=10,default_dist:torch.tensor=None):
     if default_dist!=None:
         default=default_dist
@@ -31,7 +30,6 @@ def check_data_distribution(dataloader,class_num:int=10,default_dist:torch.tenso
             data_distribution[i]+=1 
     data_distribution=data_distribution/data_distribution.sum()
     return data_distribution
-
 
 def get_numclasses(args,trainset = None):
     if args.dataset.name in ['CIFAR10', "MNIST"]:
@@ -56,8 +54,6 @@ def get_numclasses(args,trainset = None):
     print("num of classes of ", args.dataset.name," is : ", num_classes)
     return num_classes
 
-
-
 def get_optimizer(args, parameters):
     if args.set=='CIFAR10':
         optimizer = optim.SGD(parameters, lr=args.lr,momentum=args.momentum, weight_decay=args.weight_decay)
@@ -69,8 +65,6 @@ def get_optimizer(args, parameters):
         print("Invalid mode")
         return
     return optimizer
-
-
 
 def get_scheduler(optimizer, args):
     if args.set=='CIFAR10':
@@ -84,10 +78,6 @@ def get_scheduler(optimizer, args):
         print("Invalid mode")
         return
     return scheduler
-
-
-
-
 
 def modeleval(model, testloader, device):
     model.eval()
@@ -107,7 +97,6 @@ def modeleval(model, testloader, device):
     acc = (100 * correct / float(total))
     model.train()
     return acc
-
 
 def get_prefix_idx(x):
     idx = -4
