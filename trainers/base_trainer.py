@@ -240,6 +240,10 @@ class Trainer():
             # Server-side
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
                                                               selected_client_ids, copy.deepcopy(global_state_dict), current_lr)
+            
+            # updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
+            #                                                   selected_client_ids, copy.deepcopy(global_state_dict), current_lr, epoch)
+            
             self.model.load_state_dict(updated_global_state_dict)
 
             local_datasets = [DatasetSplit(self.datasets['train'], idxs=self.local_dataset_split_ids[client_id]) for client_id in selected_client_ids]
