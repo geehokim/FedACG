@@ -88,9 +88,8 @@ class CKAEvaler(Evaler):
                 images, labels = images.to(device), labels.to(device)
                 
                 feature_list = [m(images)["feature"].data for m in model_device]
+                torch.stack(feature_list, dim=1)    # (B, num_models, num_feat)
                 
-                
-                results = model(images)
                 _, predicted = torch.max(results["logit"].data, 1) # if errors occur, use ResNet18_base instead of ResNet18_GFLN
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
