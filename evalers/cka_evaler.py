@@ -79,7 +79,7 @@ class CKAEvaler(Evaler):
             C = len(self.test_loader.dataset.classes)
             
         out_cka_matrix = None
-        num_iters = 1
+        num_iters = 0
 
         with torch.no_grad():
             # for images, labels in self.loaders["test"]:
@@ -87,16 +87,15 @@ class CKAEvaler(Evaler):
                 
                 images, labels = images.to(device), labels.to(device)
                 batch_size = images.size(0)
+
+                feature_list = [m(images)["layer4"].data.view(batch_size, -1) for m in model_list]
+                feats = torch.stack(feature_list, dim=0)    # (num_models, num_batch, num_feat)
+                cka_matrix = self.linear_CKA(feats)
                 
-                for n in range(1, 5):
-                    feature_list = [m(images)[f"layer{n}"].data.view(batch_size, -1) for m in model_list]
-                    feats = torch.stack(feature_list, dim=0)    # (num_models, num_batch, num_feat)
-                    cka_matrix = self.linear_CKA(feats)
-                    
-                    if out_cka_matrix is None:
-                        out_cka_matrix = (cka_matrix / 4)
-                    else:
-                        out_cka_matrix += (cka_matrix /4)
+                if out_cka_matrix is None:
+                    out_cka_matrix = cka_matrix
+                else:
+                    out_cka_matrix += cka_matrix
                 num_iters += 1
         
         out_cka_matrix = (out_cka_matrix / num_iters).cpu().numpy()
