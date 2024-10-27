@@ -1,5 +1,5 @@
 ## Trainer ##
-type: DriftTrainer
+type: CKATrainer
 num_clients: 100
 participation_rate: 0.05
 # batch_size: 50

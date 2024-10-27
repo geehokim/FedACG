@@ -23,7 +23,7 @@ class Server():
         self.args = args
         return
     
-    def aggregate(self, local_weights, local_deltas, client_ids, model_dict, current_lr, epoch):
+    def aggregate(self, local_weights, local_deltas, client_ids, model_dict, current_lr):
         C = len(client_ids)
         for param_key in local_weights:
             local_weights[param_key] = sum(local_weights[param_key])/C

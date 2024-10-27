@@ -63,8 +63,8 @@ class CKAEvaler(Evaler):
 
 
     @torch.no_grad()
-    def eval(self, model_list: list, epoch: int, device: torch.device = None, **kwargs) -> Dict:
-
+    def eval(self, model_list: list, device: torch.device = None, **kwargs) -> Dict:
+        
         num_models = len(model_list)
         model_device = next(model_list[0].parameters()).device
         if device is None:
@@ -77,64 +77,62 @@ class CKAEvaler(Evaler):
             C = len(self.test_loader.dataset.dataset.classes)
         else:
             C = len(self.test_loader.dataset.classes)
-
-        class_loss, class_correct, class_total = torch.zeros(C), torch.zeros(C), torch.zeros(C)
-
-        logits_all, labels_all = [], []
+            
+        out_cka_matrix = None
+        num_iters = 1
 
         with torch.no_grad():
             # for images, labels in self.loaders["test"]:
             for idx, (images, labels) in enumerate(self.test_loader):
+                
                 images, labels = images.to(device), labels.to(device)
+                batch_size = images.size(0)
                 
-                feature_list = [m(images)["feature"].data for m in model_device]
-                torch.stack(feature_list, dim=1)    # (B, num_models, num_feat)
-                
-                _, predicted = torch.max(results["logit"].data, 1) # if errors occur, use ResNet18_base instead of ResNet18_GFLN
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-
-                bin_labels = labels.bincount()
-                class_total[:bin_labels.size(0)] += bin_labels.cpu()
-                bin_corrects = labels[(predicted == labels)].bincount()
-                class_correct[:bin_corrects.size(0)] += bin_corrects.cpu()
-
-                this_loss = self.criterion(results["logit"], labels)
-                loss += this_loss.sum().cpu()
-
-                for class_idx, bin_label in enumerate(bin_labels):
-                    class_loss[class_idx] += this_loss[(labels.cpu() == class_idx)].sum().cpu()
-
-                logits_all.append(results["logit"].data.cpu())
-                labels_all.append(labels.cpu())
-
-        logits_all = torch.cat(logits_all)
-        labels_all = torch.cat(labels_all)
-
-        scores = F.softmax(logits_all, 1)
-
-        acc = 100. * correct / float(total)
-        class_acc = 100. * class_correct / class_total
+                for n in range(1, 5):
+                    feature_list = [m(images)[f"layer{n}"].data.view(batch_size, -1) for m in model_list]
+                    feats = torch.stack(feature_list, dim=0)    # (num_models, num_batch, num_feat)
+                    cka_matrix = self.linear_CKA(feats)
+                    
+                    if out_cka_matrix is None:
+                        out_cka_matrix = (cka_matrix / 4)
+                    else:
+                        out_cka_matrix += (cka_matrix /4)
+                num_iters += 1
         
-        loss = loss / float(total)
-        class_loss = class_loss / class_total
+        out_cka_matrix = (out_cka_matrix / num_iters).cpu().numpy()
+        
+        for m in model_list:
+            m.eval()
 
-        model.train()
         results = {
-            "acc": acc,
-            'class_acc': class_acc,
-            'loss': loss,
-            'class_loss' : class_loss,
+            "cka_matrix": out_cka_matrix,
         }
         
         return results
     
-    def rbf(self, x, sigma=None):
-        g_x = torch.matmul(x, x.T)  
+    def gram(self, X):
+        # X: (num_models, num_batch, num_feats)
+        return torch.matmul(X, X.transpose(2, 1))
     
     def centering(self, K):
-        n = K.size(0)   # 
+        num_models, num_batch, _ = K.size()   # (num_models, num_batch, num_batch)
+        device = K.device
+        unit = K.new_ones((num_models, num_batch, num_batch))
+        I = torch.eye(num_batch, device=device).unsqueeze(0)
+        H = I - unit / num_batch    # (num_models, num_batch, num_batch)
+        return torch.matmul(torch.matmul(H, K), H) # (num_models, num_batch, num_batch)
 
+    def cross_HSIC(self, centered_L):
+        # centered_K, centered_L: (num_models, num_batch, num_batch)
+        centered_K = centered_L.unsqueeze(1)    # (num_models, 1, num_batch, num_batch)
+        return (centered_K * centered_L).sum(-1).sum(-1)  # (num_models, num_models)
+
+    def linear_CKA(self, X):
+        # X: (num_models, num_batch, num_feats)
+        K = self.centering(self.gram(X))    # (num_models, num_batch, num_batch)
         
-    def kernel_CKA(self, x, y, sigma=None):
-        
+        cross_hsic = self.cross_HSIC(K)   # (num_models, num_models)
+        self_hsic = torch.sqrt(torch.diagonal(cross_hsic)).unsqueeze(-1)  # (num_models, 1)
+        cross_var = torch.matmul(self_hsic, self_hsic.T) + 1e-8 # (num_models, num_models)
+
+        return cross_hsic / cross_var
