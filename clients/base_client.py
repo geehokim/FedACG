@@ -129,7 +129,7 @@ class Client():
         scaler = GradScaler()
         start = time.time()
         loss_meter = AverageMeter('Loss', ':.2f')
-        time_meter = AverageMeter('BatchTime', ':3.1f')
+        time_meter = AverageMeter('BatchTime', ':3.2f')
 
         self.weights = self.get_weights(epoch=global_epoch)
 
@@ -164,10 +164,11 @@ class Client():
                 loss_meter.update(loss.item(), images.size(0))
                 time_meter.update(time.time() - end)
                 end = time.time()
+                
 
             self.scheduler.step()
         
-        logger.info(f"[C{self.client_index}] End. Time: {end-start:.2f}s, Loss: {loss_meter.avg:.3f}")
+        logger.info(f"[C{self.client_index}] End. Time: {end-start:.4f}s, Loss: {loss_meter.avg:.3f}")
 
         self.model.to('cpu')
         self.global_model.to('cpu')
@@ -250,5 +251,3 @@ class Client():
 
         del results
         return losses
-
-

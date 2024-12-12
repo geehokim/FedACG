@@ -1,0 +1,10 @@
+## Trainer ##
+type: CKATrainer
+num_clients: 100
+participation_rate: 0.05
+# batch_size: 50
+local_lr_decay: 0.998
+local_lr: 0.1
+local_epochs: 5
+global_lr: 1.0
+global_rounds: 1000
