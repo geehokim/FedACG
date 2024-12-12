@@ -5,7 +5,8 @@ seed: 0
 enable_benchmark: False
 use_amp: True
 multiprocessing: False
-main_gpu: '1'
+main_gpu: '0'
+visible_devices: '0'
 num_workers: 0
 pin_memory: True
 refactoring: True
