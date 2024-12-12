@@ -105,6 +105,7 @@ class Evaler():
 
                 logits_all.append(results["logit"].data.cpu())
                 labels_all.append(labels.cpu())
+
         logits_all = torch.cat(logits_all)
         labels_all = torch.cat(labels_all)
 

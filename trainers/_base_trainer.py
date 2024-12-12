@@ -240,10 +240,6 @@ class Trainer():
             # Server-side
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
                                                               selected_client_ids, copy.deepcopy(global_state_dict), current_lr)
-            
-            # updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
-            #                                                   selected_client_ids, copy.deepcopy(global_state_dict), current_lr, epoch)
-            
             self.model.load_state_dict(updated_global_state_dict)
 
             local_datasets = [DatasetSplit(self.datasets['train'], idxs=self.local_dataset_split_ids[client_id]) for client_id in selected_client_ids]
@@ -299,6 +295,7 @@ class Trainer():
             
         return
 
+
     def wandb_log(self, log: Dict, step: int = None):
         if self.args.wandb:
             wandb.log(log, step=step)
@@ -323,139 +320,8 @@ class Trainer():
         return {
             "acc": acc
         }
+    
 
 
-@TRAINER_REGISTRY.register()
-class CKATrainer(Trainer):
 
-    def train(self) -> Dict:
-
-        result_queue = mp.Manager().Queue()
-
-        M = max(int(self.participation_rate * self.num_clients), 1)
-
-        if self.args.multiprocessing:
-            ngpus_per_node = torch.cuda.device_count()
-            task_queues = [mp.Queue() for _ in range(M)]
-            processes = [mp.get_context('spawn').Process(target=self.local_update, args=(
-                i % ngpus_per_node, task_queues[i], result_queue)) for i in range(M)]
-
-            # start all processes
-            for p in processes:
-                p.start()
-                
-        # # FedWS lookahead init
-        # if self.args.server.get('FedWS'):
-        #     self.model= copy.deepcopy(self.server.FedWS_init_norm(copy.deepcopy(self.model)))
-
-        for epoch in range(self.start_round, self.global_rounds):
-
-            if self.global_rounds == 1000:
-                exponent = epoch
-            elif self.global_rounds < 1000:
-                exponent = epoch * (1000 // self.global_rounds)
-            else:
-                exponent = epoch // 5
-            self.lr_update(epoch=exponent)
-
-            global_state_dict = copy.deepcopy(self.model.state_dict())
-            prev_model_weight = copy.deepcopy(self.model.state_dict())
-            
-            # Select clients
-            if self.participation_rate < 1.:
-                selected_client_ids = np.random.choice(range(self.num_clients), M, replace=False)
-            else:
-                selected_client_ids = range(len(self.clients))
-            logger.info(f"Global epoch {epoch}, Selected client : {selected_client_ids}")
-
-            current_lr = self.lr
-
-            local_weights = defaultdict(list)
-            local_loss_dicts = defaultdict(list)
-            local_deltas = defaultdict(list)
-
-            local_models = []
-
-            # FedACG lookahead momentum
-            if self.args.server.get('FedACG'):
-                assert(self.args.server.momentum > 0)
-                self.model= copy.deepcopy(self.server.FedACG_lookahead(copy.deepcopy(self.model)))
-                global_state_dict = copy.deepcopy(self.model.state_dict())
-
-            # Client-side
-            start = time.time()
-            for i, client_idx in enumerate(selected_client_ids):
-                task_queue_input = {
-                    'state_dict': self.model.state_dict(),
-                    'client_idx': client_idx,
-                    'local_lr': current_lr,
-                    'global_epoch': epoch,
-                }
-                if self.args.multiprocessing:
-                    task_queues[i].put(task_queue_input)
-                else:
-                    task_queue = mp.Queue()
-                    task_queue.put(task_queue_input)
-                    self.local_update(self.device, task_queue, result_queue)
-
-                    local_state_dict, local_loss_dict = result_queue.get()
-                    for loss_key in local_loss_dict:
-                        local_loss_dicts[loss_key].append(local_loss_dict[loss_key])
-
-                    local_models.append(local_state_dict)
-
-                    for param_key in local_state_dict:
-                        local_weights[param_key].append(local_state_dict[param_key])
-                        local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
-
-            if self.args.multiprocessing:
-                for _ in range(len(selected_client_ids)):
-                    # Retrieve results from the queue
-                    result = result_queue.get()
-                    local_state_dict, local_loss_dict = result
-                    for loss_key in local_loss_dict:
-                        local_loss_dicts[loss_key].append(local_loss_dict[loss_key])
-
-                    local_models.append(local_state_dict)
-
-                    # If you want to save gpu memory, make sure that weights are not allocated to GPU
-                    for param_key in local_state_dict:
-                        local_weights[param_key].append(local_state_dict[param_key])
-                        local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
-
-            logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
-            
-            if ((epoch + 1) % 100 == 0 or epoch == 0):
-                cka_mat = self.evaluate(local_models)
-                wandb.log({"CKA": np.mean(cka_mat)}, step=epoch)
-                logger.info(cka_mat)
-
-            # Server-side
-            updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
-                                                              selected_client_ids, copy.deepcopy(global_state_dict), current_lr)
-            
-            # updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
-            #                                                   selected_client_ids, copy.deepcopy(global_state_dict), current_lr, epoch)
-            
-            self.model.load_state_dict(updated_global_state_dict)
-
-            local_datasets = [DatasetSplit(self.datasets['train'], idxs=self.local_dataset_split_ids[client_id]) for client_id in selected_client_ids]
-            
-            model_device = next(self.model.parameters()).device
-
-            gc.collect()
-
-        if self.args.multiprocessing:
-            # Terminate Processes
-            terminate_processes(task_queues, processes)
-
-        return
-
-    def evaluate(self, local_models: list) -> Dict:
-        local_model_list = [copy.deepcopy(self.model) for _ in range(len(local_models))]
-        for i, state_dict in enumerate(local_models):
-            local_model_list[i].load_state_dict(state_dict)
-        results = self.evaler.eval(local_model_list)
-        cka_mat = results["cka_matrix"]
-
-        return cka_mat
+    
