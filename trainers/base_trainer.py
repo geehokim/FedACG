@@ -139,10 +139,7 @@ class Trainer():
             # Local Training
             local_model, local_loss_dict = client.local_train(global_epoch=task['global_epoch'])
             result_queue.put((local_model, local_loss_dict))
-            
-            # Memory Clean up
-            del local_model, local_loss_dict, local_dataset
-            gc.collect()
+
             if not self.args.multiprocessing:
                 break
 
@@ -228,6 +225,7 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
             
+            print(f"[Task queue] {[len(q) for q in task_queues]}")
             print(f"2. Virtual Memory: {psutil.virtual_memory().percent}% used")
             
             logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
