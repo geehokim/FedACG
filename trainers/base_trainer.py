@@ -9,6 +9,7 @@ import torch.multiprocessing as mp
 import tqdm
 import wandb
 import gc
+import psutil
 
 import pickle, os
 import numpy as np
@@ -161,6 +162,15 @@ class Trainer():
                 p.start()
                 
         for epoch in range(self.start_round, self.global_rounds):
+            # GPU 메모리 상태
+            if torch.cuda.is_available():
+                print(f"[GPU] Allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB, \
+                    Reserved: {torch.cuda.memory_reserved() / 1024**2:.2f} MB")
+
+            # CPU 메모리 상태
+            process = psutil.Process()
+            print(f"[CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
+                VRAM Used: {psutil.virtual_memory().percent}%")
 
             self.lr_update(epoch=epoch)
             current_lr = self.lr
