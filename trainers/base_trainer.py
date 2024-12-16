@@ -258,7 +258,7 @@ class Trainer():
             self.wandb_log(wandb_dict, step=epoch)
             
             # Memory clean up
-            del local_weights, local_loss_dicts, local_deltas
+            # del local_weights, local_loss_dicts, local_deltas
             torch.cuda.empty_cache()
             gc.collect()
 
