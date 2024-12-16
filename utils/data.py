@@ -146,7 +146,6 @@ def get_dataset(args, trainset, mode='iid'):
         directory = args.dataset.client_path + '/' + set + '/' + ('un' if args.split.unbalanced==True else '') + 'balanced'
         filepath = directory+'/' + mode + (str(args.split.class_per_client) if mode == 'skew' else '') + (str(args.split.alpha) if mode == 'dirichlet' else '') + (str(args.split.overlap_ratio) if mode == 'overlap' else '') + '_clients' +str(args.trainer.num_clients) +  (("_toyinform_" + str(args.split.toy_noniid_rate) + "_" + str(args.split.limit_total_classes)+ "_" +  str(args.split.limit_number_per_class)) if 'toy' in mode else "")   + '.txt'
 
-
         check_already_exist = os.path.isfile(filepath) and (os.stat(filepath).st_size != 0)
         create_new_client_data = not check_already_exist or args.split.create_client_dataset
 

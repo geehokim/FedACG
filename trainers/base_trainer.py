@@ -36,7 +36,6 @@ from omegaconf import DictConfig,OmegaConf
 import matplotlib.pyplot as plt
 
 
-
 @TRAINER_REGISTRY.register()
 class Trainer():
 
@@ -69,7 +68,6 @@ class Trainer():
         self.global_rounds = trainer_args.global_rounds
         self.lr = trainer_args.local_lr
         self.local_lr_decay = trainer_args.local_lr_decay
-
 
         self.clients: List[Client] = [client_type(self.args, client_index=c, model=copy.deepcopy(self.model)) for c in range(self.args.trainer.num_clients)]
         self.server = server
@@ -150,6 +148,8 @@ class Trainer():
             task_queues = [mp.Queue() for _ in range(M)]
             processes = [mp.get_context('spawn').Process(target=self.local_update, args=(
                 i % ngpus_per_node, task_queues[i], result_queue)) for i in range(M)]
+            # target: target client process
+            # args = (GPU ID, client's task queue, server queue)
 
             # start all processes
             for p in processes:
@@ -161,16 +161,11 @@ class Trainer():
 
         for epoch in range(self.start_round, self.global_rounds):
 
-            if self.global_rounds == 1000:
-                exponent = epoch
-            elif self.global_rounds < 1000:
-                exponent = epoch * (1000 // self.global_rounds)
-            else:
-                exponent = epoch // 5
-            self.lr_update(epoch=exponent)
+            self.lr_update(epoch=epoch)
+            current_lr = self.lr
 
+            # Global model
             global_state_dict = copy.deepcopy(self.model.state_dict())
-            prev_model_weight = copy.deepcopy(self.model.state_dict())
             
             # Select clients
             if self.participation_rate < 1.:
@@ -178,8 +173,6 @@ class Trainer():
             else:
                 selected_client_ids = range(len(self.clients))
             logger.info(f"Global epoch {epoch}, Selected client : {selected_client_ids}")
-
-            current_lr = self.lr
 
             local_weights = defaultdict(list)
             local_loss_dicts = defaultdict(list)
@@ -219,7 +212,6 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
 
-
             if self.args.multiprocessing:
                 for _ in range(len(selected_client_ids)):
                     # Retrieve results from the queue
@@ -237,16 +229,14 @@ class Trainer():
 
             logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
 
-            # Server-side
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
-                                                              selected_client_ids, copy.deepcopy(global_state_dict), current_lr)
-            
-            # updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
-            #                                                   selected_client_ids, copy.deepcopy(global_state_dict), current_lr, epoch)
-            
+                                                            selected_client_ids, copy.deepcopy(global_state_dict), current_lr, 
+                                                            epoch=epoch if self.args.server.get('AnalizeServer') else None)
+
             self.model.load_state_dict(updated_global_state_dict)
 
-            local_datasets = [DatasetSplit(self.datasets['train'], idxs=self.local_dataset_split_ids[client_id]) for client_id in selected_client_ids]
+            local_datasets = [DatasetSplit(self.datasets['train'], 
+                                           idxs=self.local_dataset_split_ids[client_id]) for client_id in selected_client_ids]
 
             # Logging
             wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
@@ -269,9 +259,15 @@ class Trainer():
         return
 
     def lr_update(self, epoch: int) -> None:
-        self.lr = self.args.trainer.local_lr * (self.local_lr_decay) ** (epoch)
+        if self.global_rounds == 1000:
+            exponent = epoch
+        elif self.global_rounds < 1000:
+            exponent = epoch * (1000 // self.global_rounds)
+        else:
+            exponent = epoch // (self.global_rounds // 1000)
+        
+        self.lr = self.args.trainer.local_lr * (self.local_lr_decay) ** (exponent)
         return
-    
 
     def save_model(self, epoch: int = -1, suffix: str = '') -> None:
         
@@ -349,17 +345,10 @@ class CKATrainer(Trainer):
         #     self.model= copy.deepcopy(self.server.FedWS_init_norm(copy.deepcopy(self.model)))
 
         for epoch in range(self.start_round, self.global_rounds):
-
-            if self.global_rounds == 1000:
-                exponent = epoch
-            elif self.global_rounds < 1000:
-                exponent = epoch * (1000 // self.global_rounds)
-            else:
-                exponent = epoch // 5
-            self.lr_update(epoch=exponent)
+            
+            self.lr_update(epoch=epoch)
 
             global_state_dict = copy.deepcopy(self.model.state_dict())
-            prev_model_weight = copy.deepcopy(self.model.state_dict())
             
             # Select clients
             if self.participation_rate < 1.:

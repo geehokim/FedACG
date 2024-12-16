@@ -51,7 +51,7 @@ def get_numclasses(args,trainset = None):
     else:
         assert False
         
-    print("num of classes of ", args.dataset.name," is : ", num_classes)
+    print("number of classes in ", args.dataset.name," is : ", num_classes)
     return num_classes
 
 def get_optimizer(args, parameters):

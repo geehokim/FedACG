@@ -168,7 +168,7 @@ def cifar_dirichlet_unbalanced(dataset, n_nets, alpha=0.5):
         X_train, y_train, X_test, y_test = load_cifar10_data(datadir)
     '''
     #X_train=dataset[:][0]
-    y_train=torch.zeros(len(dataset),dtype=torch.long)
+    y_train=torch.zeros(len(dataset), dtype=torch.long)
     print(y_train.dtype)
     for a in range(len(dataset)):
         y_train[a]=(dataset[a][1])
@@ -184,7 +184,6 @@ def cifar_dirichlet_unbalanced(dataset, n_nets, alpha=0.5):
     min_size = 0
     K = len(dataset.class_to_idx)
     N = len(dataset)
-    N = y_train.shape[0]
     net_dataidx_map = {i: np.array([], dtype='int64') for i in range(n_nets)}
 
     while min_size < 10:
@@ -194,10 +193,10 @@ def cifar_dirichlet_unbalanced(dataset, n_nets, alpha=0.5):
             np.random.shuffle(idx_k)
             proportions = np.random.dirichlet(np.repeat(alpha, n_nets))
             ## Balance
-            proportions = np.array([p*(len(idx_j)<N/n_nets) for p,idx_j in zip(proportions,idx_batch)])
-            proportions = proportions/proportions.sum()
+            proportions = np.array([p * ( len(idx_j) < N / n_nets) for p, idx_j in zip(proportions, idx_batch)])
+            proportions = proportions / proportions.sum()
             proportions = (np.cumsum(proportions)*len(idx_k)).astype(int)[:-1]
-            idx_batch = [idx_j + idx.tolist() for idx_j,idx in zip(idx_batch,np.split(idx_k,proportions))]
+            idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
             min_size = min([len(idx_j) for idx_j in idx_batch])
 
         for j in range(n_nets):
