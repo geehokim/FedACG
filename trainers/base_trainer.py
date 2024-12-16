@@ -233,6 +233,12 @@ class Trainer():
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
                                                             selected_client_ids, copy.deepcopy(global_state_dict), current_lr, 
                                                             epoch=epoch if self.args.server.get('AnalizeServer') else None)
+
+            self.model.load_state_dict(updated_global_state_dict)
+
+            # Logging
+            wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
+            wandb_dict['lr'] = self.lr
             
             # Memory clean up
             del local_weights, local_loss_dicts, local_deltas
@@ -242,12 +248,6 @@ class Trainer():
             process = psutil.Process()
             print(f"2. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
                 VRAM Used: {psutil.virtual_memory().percent}%")
-
-            self.model.load_state_dict(updated_global_state_dict)
-
-            # Logging
-            wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
-            wandb_dict['lr'] = self.lr
             
             if self.args.eval.freq > 0 and epoch % self.args.eval.freq == 0:
                 self.evaluate(epoch=epoch)
