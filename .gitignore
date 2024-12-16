@@ -9,5 +9,3 @@ data
 data/
 outputs
 outputs/
-exp_*
-./exp_*
