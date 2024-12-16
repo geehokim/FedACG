@@ -162,11 +162,7 @@ class Trainer():
                 p.start()
                 
         for epoch in range(self.start_round, self.global_rounds):
-            # CPU 메모리 상태
-            process = psutil.Process()
-            print(f"1. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
-                VRAM Used: {psutil.virtual_memory().percent}%")
-
+            
             self.lr_update(epoch=epoch)
             current_lr = self.lr
 
@@ -189,11 +185,6 @@ class Trainer():
                 assert(self.args.server.momentum > 0)
                 self.model= copy.deepcopy(self.server.FedACG_lookahead(copy.deepcopy(self.model)))
                 global_state_dict = copy.deepcopy(self.model.state_dict())
-
-            # CPU 메모리 상태
-            process = psutil.Process()
-            print(f"2. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
-                VRAM Used: {psutil.virtual_memory().percent}%")
             
             # Client-side
             start = time.time()
@@ -219,6 +210,11 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
 
+            # CPU 메모리 상태
+            process = psutil.Process()
+            print(f"1. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
+                VRAM Used: {psutil.virtual_memory().percent}%")
+
             if self.args.multiprocessing:
                 for _ in range(len(selected_client_ids)):
                     # Retrieve results from the queue
@@ -233,7 +229,7 @@ class Trainer():
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
             
             process = psutil.Process()
-            print(f"3. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
+            print(f"2. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
                 VRAM Used: {psutil.virtual_memory().percent}%")
 
             logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
@@ -243,10 +239,6 @@ class Trainer():
                                                             epoch=epoch if self.args.server.get('AnalizeServer') else None)
 
             self.model.load_state_dict(updated_global_state_dict)
-            
-            process = psutil.Process()
-            print(f"4. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
-                VRAM Used: {psutil.virtual_memory().percent}%")
 
             # Logging
             wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
@@ -264,10 +256,6 @@ class Trainer():
             del local_weights, local_loss_dicts, local_deltas
             torch.cuda.empty_cache()
             gc.collect()
-            
-            process = psutil.Process()
-            print(f"5. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
-                VRAM Used: {psutil.virtual_memory().percent}%")
 
         if self.args.multiprocessing:
             # Terminate Processes
