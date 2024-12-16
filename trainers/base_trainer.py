@@ -214,6 +214,7 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
 
+            print(f"1. Virtual Memory: {psutil.virtual_memory().percent}% used")
             if self.args.multiprocessing:
                 for _ in range(len(selected_client_ids)):
                     # Retrieve results from the queue
@@ -227,11 +228,15 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
             
+            print(f"2. Virtual Memory: {psutil.virtual_memory().percent}% used")
+            
             logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
 
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
                                                             selected_client_ids, copy.deepcopy(global_state_dict), current_lr, 
                                                             epoch=epoch if self.args.server.get('AnalizeServer') else None)
+            
+            print(f"3. Virtual Memory: {psutil.virtual_memory().percent}% used")
 
             self.model.load_state_dict(updated_global_state_dict)
 
