@@ -225,7 +225,7 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
             
-            print(f"[Task queue] {[len(q) for q in task_queues]}")
+            print(f"[Task queue] {[q.empty() for q in task_queues]}")
             print(f"2. Virtual Memory: {psutil.virtual_memory().percent}% used")
             
             logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
