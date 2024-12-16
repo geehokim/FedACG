@@ -160,10 +160,6 @@ class Trainer():
             for p in processes:
                 p.start()
                 
-        # # FedWS lookahead init
-        # if self.args.server.get('FedWS'):
-        #     self.model= copy.deepcopy(self.server.FedWS_init_norm(copy.deepcopy(self.model)))
-
         for epoch in range(self.start_round, self.global_rounds):
 
             self.lr_update(epoch=epoch)
@@ -182,8 +178,6 @@ class Trainer():
             local_weights = defaultdict(list)
             local_loss_dicts = defaultdict(list)
             local_deltas = defaultdict(list)
-
-            local_models = []
 
             # FedACG lookahead momentum
             if self.args.server.get('FedACG'):
@@ -211,8 +205,6 @@ class Trainer():
                     for loss_key in local_loss_dict:
                         local_loss_dicts[loss_key].append(local_loss_dict[loss_key])
 
-                    # local_models.append(local_state_dict)
-
                     for param_key in local_state_dict:
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
@@ -224,8 +216,6 @@ class Trainer():
                     local_state_dict, local_loss_dict = result
                     for loss_key in local_loss_dict:
                         local_loss_dicts[loss_key].append(local_loss_dict[loss_key])
-
-                    # local_models.append(local_state_dict)
 
                     # If you want to save gpu memory, make sure that weights are not allocated to GPU
                     for param_key in local_state_dict:
@@ -251,6 +241,10 @@ class Trainer():
                 self.save_model(epoch=epoch)
 
             self.wandb_log(wandb_dict, step=epoch)
+            
+            # Memory clean up
+            del local_weights, local_loss_dicts, local_deltas
+            torch.cuda.empty_cache()
             gc.collect()
 
         if self.args.multiprocessing:

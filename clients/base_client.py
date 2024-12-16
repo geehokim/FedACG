@@ -142,7 +142,7 @@ class Client():
             for i, (images, labels) in enumerate(self.loader):
                     
                 images, labels = images.to(self.device), labels.to(self.device)
-                self.model.zero_grad()
+                self.model.zero_grad(set_to_none=True)
 
                 with autocast(enabled=self.args.use_amp):
                     losses = self._algorithm(images, labels)
@@ -164,7 +164,6 @@ class Client():
                 loss_meter.update(loss.item(), images.size(0))
                 time_meter.update(time.time() - end)
                 end = time.time()
-                
 
             self.scheduler.step()
         
@@ -181,12 +180,12 @@ class Client():
                 fixed_params = {n:p for n,p in self.global_model.named_parameters()}
                 for n, p in self.model.named_parameters():
                     self.local_deltas[self.user][n] = (self.local_delta[n] - self.args.client.Dyn.alpha * (p - fixed_params[n]).detach().clone().to('cpu'))
-
-
-        gc.collect()
+            del fixed_params
         
+        torch.cuda.empty_cache()
+        gc.collect()
+
         return self.model.state_dict(), loss_dict
-    
 
     def _algorithm(self, images, labels, ) -> Dict:
         losses = defaultdict(float)
@@ -237,7 +236,7 @@ class Client():
             not_true_logits = results['logit'][not_true_idx].view(batch_size, results['logit'].size(1) - 1)
             not_true_logits_global = global_results['logit'][not_true_idx].view(batch_size, results['logit'].size(1) - 1)
             losses["NTD"] = KD(not_true_logits_global, not_true_logits, T=self.args.client.NTD.Temp)
-            del global_results
+            del global_results, not_true_idx, not_true_logits, not_true_logits_global
 
         #FedDyn
         if self.args.client.get('Dyn'):
@@ -248,6 +247,8 @@ class Client():
                 local_grad = torch.flatten(local_d)
                 lg_loss += (p * local_grad.detach()).sum()
             losses["Dyn"] = - lg_loss + 0.5 * self.args.client.Dyn.alpha * prox_loss
-
+            
         del results
+        torch.cuda.empty_cache()
+        gc.collect()
         return losses
