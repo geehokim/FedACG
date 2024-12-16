@@ -40,7 +40,6 @@ class Client():
         return
 
     def setup(self, state_dict, device, local_dataset, local_lr, global_epoch, trainer, **kwargs):
-
         self._update_model(state_dict)
         self._update_global_model(state_dict)
         self.device = device
@@ -49,6 +48,7 @@ class Client():
             train_sampler = RandomClasswiseSampler(local_dataset, num_instances=self.args.dataset.num_instances)   
         else:
             train_sampler = None
+
         self.loader =  DataLoader(local_dataset, batch_size=self.args.batch_size, sampler=train_sampler, shuffle=train_sampler is None,
                                    num_workers=self.args.num_workers, pin_memory=self.args.pin_memory)
         

@@ -109,8 +109,10 @@ class Trainer():
 
         while True:
             task = task_queue.get()
+            
             if task is None:
                 break
+            
             client = self.clients[task['client_idx']]
 
             local_dataset = DatasetSplitSubset(
@@ -127,15 +129,18 @@ class Trainer():
                 'global_epoch': task['global_epoch'],
                 'trainer': self,
             }
+
             if self.args.client.get('Dyn'):
                 setup_inputs['past_local_deltas'] = self.past_local_deltas
                 setup_inputs['user'] = task['client_idx']
+
             client.setup(**setup_inputs)
             # Local Training
             local_model, local_loss_dict = client.local_train(global_epoch=task['global_epoch'])
             result_queue.put((local_model, local_loss_dict))
             if not self.args.multiprocessing:
                 break
+
 
     def train(self) -> Dict:
 
@@ -206,7 +211,7 @@ class Trainer():
                     for loss_key in local_loss_dict:
                         local_loss_dicts[loss_key].append(local_loss_dict[loss_key])
 
-                    local_models.append(local_state_dict)
+                    # local_models.append(local_state_dict)
 
                     for param_key in local_state_dict:
                         local_weights[param_key].append(local_state_dict[param_key])
@@ -220,7 +225,7 @@ class Trainer():
                     for loss_key in local_loss_dict:
                         local_loss_dicts[loss_key].append(local_loss_dict[loss_key])
 
-                    local_models.append(local_state_dict)
+                    # local_models.append(local_state_dict)
 
                     # If you want to save gpu memory, make sure that weights are not allocated to GPU
                     for param_key in local_state_dict:
@@ -235,16 +240,12 @@ class Trainer():
 
             self.model.load_state_dict(updated_global_state_dict)
 
-            local_datasets = [DatasetSplit(self.datasets['train'], 
-                                           idxs=self.local_dataset_split_ids[client_id]) for client_id in selected_client_ids]
-
             # Logging
             wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
             wandb_dict['lr'] = self.lr
             
-            model_device = next(self.model.parameters()).device
             if self.args.eval.freq > 0 and epoch % self.args.eval.freq == 0:
-                self.evaluate(epoch=epoch, local_datasets=local_datasets)
+                self.evaluate(epoch=epoch)
 
             if (self.args.save_freq > 0 and (epoch + 1) % self.args.save_freq == 0) or (epoch + 1 == self.args.trainer.global_rounds):
                 self.save_model(epoch=epoch)
@@ -302,7 +303,7 @@ class Trainer():
     def validate(self, epoch: int, ) -> Dict:
         return
 
-    def evaluate(self, epoch: int, local_datasets: List[torch.utils.data.Dataset] = None) -> Dict:
+    def evaluate(self, epoch: int) -> Dict:
 
         results = self.evaler.eval(model=copy.deepcopy(self.model), epoch=epoch)
         acc = results["acc"]
@@ -421,17 +422,10 @@ class CKATrainer(Trainer):
 
             # Server-side
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
-                                                              selected_client_ids, copy.deepcopy(global_state_dict), current_lr)
-            
-            # updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
-            #                                                   selected_client_ids, copy.deepcopy(global_state_dict), current_lr, epoch)
+                                                            selected_client_ids, copy.deepcopy(global_state_dict), current_lr, 
+                                                            epoch=epoch if self.args.server.get('AnalizeServer') else None)
             
             self.model.load_state_dict(updated_global_state_dict)
-
-            local_datasets = [DatasetSplit(self.datasets['train'], idxs=self.local_dataset_split_ids[client_id]) for client_id in selected_client_ids]
-            
-            model_device = next(self.model.parameters()).device
-
             gc.collect()
 
         if self.args.multiprocessing:
