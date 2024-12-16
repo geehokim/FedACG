@@ -228,15 +228,20 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
             
-            process = psutil.Process()
-            print(f"2. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
-                VRAM Used: {psutil.virtual_memory().percent}%")
-
             logger.info(f"Global epoch {epoch}, Train End. Total Time: {time.time() - start:.2f}s")
 
             updated_global_state_dict = self.server.aggregate(local_weights, local_deltas,
                                                             selected_client_ids, copy.deepcopy(global_state_dict), current_lr, 
                                                             epoch=epoch if self.args.server.get('AnalizeServer') else None)
+            
+            # Memory clean up
+            del local_weights, local_loss_dicts, local_deltas
+            torch.cuda.empty_cache()
+            gc.collect()
+            
+            process = psutil.Process()
+            print(f"2. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
+                VRAM Used: {psutil.virtual_memory().percent}%")
 
             self.model.load_state_dict(updated_global_state_dict)
 
