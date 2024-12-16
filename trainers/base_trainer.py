@@ -139,6 +139,10 @@ class Trainer():
             # Local Training
             local_model, local_loss_dict = client.local_train(global_epoch=task['global_epoch'])
             result_queue.put((local_model, local_loss_dict))
+            
+            # Memory Clean up
+            del local_model, local_loss_dict, local_dataset
+            gc.collect()
             if not self.args.multiprocessing:
                 break
 
@@ -210,11 +214,6 @@ class Trainer():
                         local_weights[param_key].append(local_state_dict[param_key])
                         local_deltas[param_key].append(local_state_dict[param_key] - global_state_dict[param_key])
 
-            # CPU 메모리 상태
-            process = psutil.Process()
-            print(f"1. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
-                VRAM Used: {psutil.virtual_memory().percent}%")
-
             if self.args.multiprocessing:
                 for _ in range(len(selected_client_ids)):
                     # Retrieve results from the queue
@@ -236,29 +235,20 @@ class Trainer():
 
             self.model.load_state_dict(updated_global_state_dict)
 
-            # Logging
-            wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
-            wandb_dict['lr'] = self.lr
-            
-            # Memory clean up
-            del local_weights, local_loss_dicts, local_deltas
-            torch.cuda.empty_cache()
-            gc.collect()
-            
-            process = psutil.Process()
-            print(f"2. [CPU] Memory (RSS): {process.memory_info().rss / 1024**2:.2f} MB, \
-                VRAM Used: {psutil.virtual_memory().percent}%")
-            
             if self.args.eval.freq > 0 and epoch % self.args.eval.freq == 0:
                 self.evaluate(epoch=epoch)
 
             if (self.args.save_freq > 0 and (epoch + 1) % self.args.save_freq == 0) or (epoch + 1 == self.args.trainer.global_rounds):
                 self.save_model(epoch=epoch)
 
+            # Logging
+            wandb_dict = {loss_key: np.mean(local_loss_dicts[loss_key]) for loss_key in local_loss_dicts}
+            wandb_dict['lr'] = self.lr
+
             self.wandb_log(wandb_dict, step=epoch)
-            
+
             # Memory clean up
-            # del local_weights, local_loss_dicts, local_deltas
+            del local_weights, local_loss_dicts, local_deltas
             torch.cuda.empty_cache()
             gc.collect()
 
