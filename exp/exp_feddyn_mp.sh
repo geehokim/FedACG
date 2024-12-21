@@ -6,7 +6,7 @@ if [ ${DATASET} = "tinyimagenet" ];then
 fi 
 ALPHA=0.1
 
-python federated_train.py multiprocessing=True main_gpu=0 client=Dyn server=FedDyn exp_name=FedDyn_"$ALPHA" \
+python federated_train.py multiprocessing=True visible_devices=\'${CUDA_VISIBLE_DEVICES}\' main_gpu=0 client=Dyn server=FedDyn exp_name=FedDyn_"$ALPHA" \
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
-batch_size=${BATCH_SIZE} wandb=True \
+batch_size=${BATCH_SIZE} wandb=False \
 # split.mode=iid

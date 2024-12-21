@@ -31,6 +31,7 @@ def main(args : DictConfig) -> None:
     # pid = os.getpid()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.visible_devices
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    print(f"Available GPUs: {torch.cuda.device_count()}")
 
     args.log_dir = Path(args.log_dir)
     exp_name = args.exp_name if args.remark == "" else f"{args.exp_name}_{args.remark}"

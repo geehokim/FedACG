@@ -171,6 +171,9 @@ class Client():
 
         self.model.to('cpu')
         self.global_model.to('cpu')
+        torch.cuda.empty_cache()
+        gc.collect()
+        
         loss_dict = {
             f'loss/{self.args.dataset.name}': loss_meter.avg,
         }
@@ -180,10 +183,7 @@ class Client():
                 fixed_params = {n:p for n,p in self.global_model.named_parameters()}
                 for n, p in self.model.named_parameters():
                     self.local_deltas[self.user][n] = (self.local_delta[n] - self.args.client.Dyn.alpha * (p - fixed_params[n]).detach().clone().to('cpu'))
-            del fixed_params
-        
-        torch.cuda.empty_cache()
-        gc.collect()
+            del fixed_params      
 
         return self.model.state_dict(), loss_dict
 
