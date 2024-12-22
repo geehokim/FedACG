@@ -1,7 +1,6 @@
 from itertools import combinations
 import numpy as np
 import math
-from scipy import special
 
 def err(q, s1, s2, cache):
     key = (q, s1, s2)
@@ -57,16 +56,15 @@ def generate_alpha_and_q(M, step=0.001, max_value=3):
         q_values = np.array([np.sum(np.array(alpha) * b) for b in b_combinations])
 
         # Filter unique positive q values
-        unique_positive_q = np.array(sorted(set(q_values[q_values > 0])))
+        unique_positive_q = sorted(set(q_values[q_values > 0]))
         # print(f"{unique_positive_q}, {alpha}")
-        
-        q_minus = unique_positive_q[:-1] - unique_positive_q[1:]
-        q_plus = unique_positive_q[:-1] + unique_positive_q[1:]
-        s = q_plus * 0.5
-        q_square_diff = q_minus * q_plus
-        
-        total_error = np.sqrt(2./np.pi) * (np.sum(q_minus * np.exp(- 0.5 * (s ** 2))) - unique_positive_q[0]) \
-                        + 0.5 * (np.sum(q_square_diff * special.erf(s / np.sqrt(2))) + (unique_positive_q[-1] + 1))
+
+        total_error = 0.
+        # Print q values and corresponding alpha
+        for i, quant in enumerate(unique_positive_q):
+            s1 = 0. if i == 0 else np.mean(unique_positive_q[i-1:i+1])
+            s2 = np.inf if i == len(unique_positive_q) - 1 else np.mean(unique_positive_q[i:i+2])
+            total_error += err(quant, s1, s2, cache)
 
         if min_val > total_error:
             min_val = total_error
