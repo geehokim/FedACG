@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 from clients.build import CLIENT_REGISTRY
 
+from utils.qunat_function import AQD_update
 
 @CLIENT_REGISTRY.register()
 class Client():
@@ -173,6 +174,10 @@ class Client():
         self.global_model.to('cpu')
         torch.cuda.empty_cache()
         gc.collect()
+        
+        # AQD
+        if self.args.model.AQD:
+            AQD_update(self.model , self.args)
         
         loss_dict = {
             f'loss/{self.args.dataset.name}': loss_meter.avg,

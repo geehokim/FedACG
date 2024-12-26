@@ -36,6 +36,8 @@ from omegaconf import DictConfig,OmegaConf
 #from netcal.metrics import ECE
 import matplotlib.pyplot as plt
 
+from utils.qunat_function import AQD_update
+
 
 @TRAINER_REGISTRY.register()
 class Trainer():
@@ -167,6 +169,10 @@ class Trainer():
             self.lr_update(epoch=epoch)
             current_lr = self.lr
 
+            # AQD
+            if self.args.model.AQD:
+                AQD_update(self.model, self.args)
+            
             # Global model
             global_state_dict = copy.deepcopy(self.model.state_dict())
             
