@@ -1,8 +1,6 @@
 ## Client ##
 type: Client
 
-
-  
 NTD:
   weight: 0.3
   Temp : 1

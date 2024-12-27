@@ -73,8 +73,7 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
 
 - Turn on the following options
    ~~~
-   trainer.uplink_quantizer="AQD"
-   trainer.downlink_quantizer="AQD"
+   quantizer=AQD
    ~~~
    
 ### FedACG training

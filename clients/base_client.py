@@ -176,8 +176,9 @@ class Client():
         gc.collect()
         
         # AQD
-        if self.args.trainer.downlink_quantizer == "AQD":
-            AQD_update(self.model, self.args)
+        if self.args.quantizer.uplink:
+            if self.args.quantizer.name == "AQD":
+                AQD_update(self.model, self.args)
         
         loss_dict = {
             f'loss/{self.args.dataset.name}': loss_meter.avg,

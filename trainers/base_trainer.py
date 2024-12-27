@@ -170,8 +170,9 @@ class Trainer():
             current_lr = self.lr
 
             # AQD
-            if self.args.trainer.downlink_quantizer == "AQD":
-                AQD_update(self.model, self.args)
+            if self.args.quantizer.downlink:
+                if self.args.quantizer.name == "AQD":
+                    AQD_update(self.model, self.args)
             
             # Global model
             global_state_dict = copy.deepcopy(self.model.state_dict())
