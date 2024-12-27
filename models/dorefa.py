@@ -5,6 +5,19 @@ import numpy as np
 
 __EPS__ = 1e-5
 
+
+class RangeQuantize(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, q, edges):
+        indices = torch.bucketize(x, edges, right=False)
+        quantized_x = q[indices]
+
+        return quantized_x
+    
+    @staticmethod
+    def backward(ctx, grad_output):
+        return grad_output, None
+
 ##########
 class RoundSTE(torch.autograd.Function):
     @staticmethod
