@@ -7,24 +7,3 @@ use_bn_layer: False
 last_feature_dim: 512
 rho: 1e-3
 
-#AQD
-AQD: False
-keyword: ['dorefa', 'lsq' , 'quant_loss', 'group-norm']
-groups: 1
-
-agg_quant: False
-wt_bit: 8
-wt_level: null
-wt_half_range: false
-wt_separator: 0.38
-wt_correlate: -1
-wt_ratio: 1
-wt_scale: 0.5
-wt_enable: True 
-wt_boundary: 1.0 
-wt_quant_group: 1
-wt_grad_type: 'STE-scale'
-wt_grad_scale: 'fan-scale'
-wt_use_quant_loss: False
-wt_adaptive: None
-wt_topk: 5
