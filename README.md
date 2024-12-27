@@ -68,7 +68,14 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
 
 - We have provided {i.i.d, dir0.3, dir0.6} data splits for {100, 500} clients in the `./client_data/` directory.
 - You can simulate diverse non-i.i.d. FL settings by adjusting the total number of total clients (`trainer.num_clients`), the degree of data heterogeneity (`split.alpha`), and the participation rates (`trainer.participation_rate`).
-   
+
+### Options for quantization
+
+- Turn on the following options
+   ~~~
+   trainer.uplink_quantizer="AQD"
+   trainer.downlink_quantizer="AQD"
+   ~~~
    
 ### FedACG training
    
