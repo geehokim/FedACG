@@ -170,7 +170,7 @@ class Trainer():
             current_lr = self.lr
 
             # AQD
-            if self.args.model.AQD:
+            if self.args.trainer.downlink_quantizer == "AQD":
                 AQD_update(self.model, self.args)
             
             # Global model

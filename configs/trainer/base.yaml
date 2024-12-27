@@ -8,3 +8,5 @@ local_lr: 0.1
 local_epochs: 5
 global_lr: 1.0
 global_rounds: 1000
+uplink_quantizer: ""
+downlink_quantizer: ""
