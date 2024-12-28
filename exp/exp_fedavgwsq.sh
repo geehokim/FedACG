@@ -5,8 +5,10 @@ if [ ${DATASET} = "tinyimagenet" ];then
     BATCH_SIZE=100
 fi 
 ALPHA=0.3
+NBITS=1
 
-python3 federated_train.py client=base server=base exp_name=FedAvgWS_"$ALPHA" \
+python3 federated_train.py client=base server=base exp_name=FedAvgQ_"$ALPHA"_"B$NBITS" \
 dataset=${DATASET} trainer.num_clients=100 split.alpha=${ALPHA} trainer.participation_rate=0.05 \
-batch_size=${BATCH_SIZE} wandb=False model=resnet18_WS project="dev_quant" \
+quantizer=AQD quantizer.wt_bit=${NBITS} \
+batch_size=${BATCH_SIZE} wandb=True model=resnet18_WS project="FedWS_5_100" \
 # split.mode=iid
