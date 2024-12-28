@@ -173,6 +173,8 @@ class Trainer():
             if self.args.quantizer.downlink:
                 if self.args.quantizer.name == "AQD":
                     AQD_update(self.model, self.args)
+                elif self.args.quantizer.name == "WSQ":
+                    
             
             # Global model
             global_state_dict = copy.deepcopy(self.model.state_dict())
