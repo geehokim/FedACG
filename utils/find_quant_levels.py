@@ -50,6 +50,8 @@ def generate_alpha_and_q(M, step=0.001, max_value=3):
     print(f"Total iters: {total_iters}")
     # Process each combination
     for k, alpha in enumerate(alpha_combinations):
+        if sum(alpha) > 5:
+            continue
         # Generate all combinations of b_k in {-1, 1} for 2^(M-1) terms
         b_combinations = np.array(np.meshgrid(*[[-1, 1]] * len(alpha))).T.reshape(-1, len(alpha))
 
@@ -66,7 +68,7 @@ def generate_alpha_and_q(M, step=0.001, max_value=3):
         q_square_diff = q_minus * q_plus
         
         total_error = np.sqrt(2./np.pi) * (np.sum(q_minus * np.exp(- 0.5 * (s ** 2))) - unique_positive_q[0]) \
-                        + 0.5 * (np.sum(q_square_diff * special.erf(s / np.sqrt(2))) + (unique_positive_q[-1] + 1))
+                        + 0.5 * (np.sum(q_square_diff * special.erf(s / np.sqrt(2))) + (unique_positive_q[-1] ** 2 + 1))
 
         if min_val > total_error:
             min_val = total_error
@@ -76,8 +78,8 @@ def generate_alpha_and_q(M, step=0.001, max_value=3):
             print(f"{100*k/total_iters:.2f}% Brute-force done | Alpha: {selected_alpha} | Min Err.: {min_val}")
 
 # Example usage
-M = 4 # Number of alpha variables
-step = 0.01  # Step size
-max_value = 2  # Maximum value for alpha
+M = 8 # Number of alpha variables
+step = 0.0375  # Step size
+max_value = 1.5 # Maximum value for alpha
 
 generate_alpha_and_q(M, step, max_value)
