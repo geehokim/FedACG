@@ -175,7 +175,7 @@ class Trainer():
                     AQD_update(self.model, self.args)
                 elif self.args.quantizer.name == "WSQ":
                     WSQ_update(self.model, self.args)
-            
+
             # Global model
             global_state_dict = copy.deepcopy(self.model.state_dict())
             
