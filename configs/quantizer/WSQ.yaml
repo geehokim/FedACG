@@ -5,3 +5,4 @@ downlink: False
 # WSQ
 keyword: []
 wt_bit: 8
+wt_clip_prob: -1

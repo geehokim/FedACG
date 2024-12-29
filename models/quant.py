@@ -639,9 +639,11 @@ class quantization(nn.Module):
                     # clip_val = dorefa.GradientScale(self.clip_val.abs(), self.grad_factor) # 클리핑 값 계산 및 조정하여 학습 가능하도록.. 어디서부터 어디까지 자를건지
                                                                                            # grad_factor은 곱해지는 계수
                                                                                            
-                    flat_x = x.flatten().cpu().numpy()
-                    sorted_x = np.sort(np.abs(flat_x))[::-1]
-                    clip_val = sorted_x[:int(self.args.quantizer.wt_topk * 0.01 * len(sorted_x))][-1]
+                    if self.args.quantizer.wt_clip_prob > 0.:
+                        flat_x = x.flatten().cpu().numpy()
+                        sorted_x = np.sort(np.abs(flat_x))[::-1]
+                        topk = max(1, int(self.args.quantizer.wt_clip_prob * len(sorted_x)))
+                        clip_val = sorted_x[:topk][-1]
                     
                     c1, c2, kh, kw = x.shape
                     x = x.reshape(self.quant_group, -1, kh, kw)

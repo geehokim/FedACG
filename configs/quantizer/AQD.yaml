@@ -22,4 +22,4 @@ wt_grad_type: 'STE-scale'
 wt_grad_scale: 'fan-scale'
 wt_use_quant_loss: False
 wt_adaptive: 'var-mean' 
-wt_topk: 5
+wt_clip_prob: 0.05
