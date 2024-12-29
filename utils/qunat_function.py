@@ -124,9 +124,9 @@ class WLQConv2d(nn.Conv2d):
         
     def forward(self, x):
         with torch.no_grad():
-            x_mean = x.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
+            x_mean = x.mean().view(-1, 1, 1, 1)
             x = x - x_mean
-            x_std = x.view(x.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
+            x_std = x.view(-1).std().view(-1, 1, 1, 1) + 1e-8
             x = x / x_std.expand_as(x)
 
             indices = torch.bucketize(x, self.edges, right=False)
@@ -140,17 +140,18 @@ def WLQ_update(model, args):
     for name, param in model.named_parameters():
         if hasattr(args.quantizer, 'keyword'):
             if 'first-last' in args.quantizer.keyword and name == 'conv1.weight':
-                first_quant_conv = WSQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], n_bits=args.quantizer.wt_bit)
+                first_quant_conv = WLQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], n_bits=args.quantizer.wt_bit)
                 param.data.copy_(first_quant_conv(param.data)) 
             elif name != "conv1.weight" and ("conv1.weight" in name or "conv2.weight" in name):
-                layer_quant_conv = WSQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], n_bits=args.quantizer.wt_bit)
+                layer_quant_conv = WLQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], n_bits=args.quantizer.wt_bit)
                 param.data.copy_(layer_quant_conv(param.data))
             elif "downsample.0.weight" in name:
-                quant_conv1x1 = WSQConv2d(param.shape[1], param.shape[0], kernel_size=1, n_bits=args.quantizer.wt_bit)
+                quant_conv1x1 = WLQConv2d(param.shape[1], param.shape[0], kernel_size=1, n_bits=args.quantizer.wt_bit)
                 param.data.copy_(quant_conv1x1(param.data))
             elif 'first-last' in args.quantizer.keyword and name == 'fc.weight':
-                last_quant_linear = quant_linear(args.model.last_feature_dim, args.num_classes, bias=True, n_bits=args.quantizer.wt_bit)
+                last_quant_linear = WLQConv2d(args.model.last_feature_dim, args.num_classes, bias=True, n_bits=args.quantizer.wt_bit)
                 param.data.copy_(last_quant_linear(param.data))
+                
                 
 def quantize_and_dequantize(tensor, global_tensor, bit_width, lr=1.0):
     residual = tensor - global_tensor

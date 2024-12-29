@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 from clients.build import CLIENT_REGISTRY
 
-from utils.qunat_function import AQD_update , PAQ_update, WSQ_update
+from utils.qunat_function import AQD_update , PAQ_update, WSQ_update, WLQ_update
 
 @CLIENT_REGISTRY.register()
 class Client():
@@ -183,6 +183,8 @@ class Client():
                 WSQ_update(self.model, self.args)
             elif self.args.quantizer.name == "PAQ":
                 PAQ_update(self.model, self.global_model, self.args)
+            elif self.args.quantizer.name == "WLQ":
+                WLQ_update(self.model, self.args)
         
         loss_dict = {
             f'loss/{self.args.dataset.name}': loss_meter.avg,

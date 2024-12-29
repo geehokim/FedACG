@@ -1,0 +1,7 @@
+name: "WLQ"
+uplink: True
+downlink: False
+
+# WSQ
+keyword: []
+wt_bit: 8
