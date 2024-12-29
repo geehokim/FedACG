@@ -27,13 +27,14 @@ class WSQConv2d(nn.Conv2d):
     bit8 = [0.05, 0.1, 0.2, 0.3375, 0.5250, 0.9875, 1.3875, 1.45]
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True, rho=1e-3, n_bits=1):
+                 padding=0, dilation=1, groups=1, bias=True, rho=1e-3, n_bits=1, clip_prob=-1):
         super(WSQConv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
                  padding, dilation, groups, bias)
         
         self.alpha = torch.tensor(getattr(self, f'bit{n_bits}'), dtype=torch.float32)
         self.rho = rho
-
+        self.clip_prob = clip_prob
+        
         # Generate all combinations of b_k in {-1, 1} for 2^(M-1) terms
         b_combinations = torch.cartesian_prod(*[torch.tensor([-1., 1.]) for _ in range(len(self.alpha))])
         if len(self.alpha) == 1:
@@ -42,11 +43,32 @@ class WSQConv2d(nn.Conv2d):
         self.q_values = torch.sort(q_values).values
         self.edges = 0.5 * (self.q_values[1:] + self.q_values[:-1])
         
+    def clip_by_prob(self, x):
+
+        original_shape = x.shape
+        x_flat = x.view(x.size(0), -1)
+        abs_x_flat = x_flat.abs()
+        topk = max(1, int(self.clip_prob * abs_x_flat.size(1)))
+        thresholds = torch.topk(abs_x_flat, topk, dim=1, largest=True, sorted=True).values[:, -1].view(-1, 1)
+
+        # Clip values in parallel
+        clipped_x_flat = torch.where(
+            x_flat > thresholds, thresholds,
+            torch.where(x_flat < -thresholds, -thresholds, x_flat)
+        )
+
+        # Reshape back to the original shape
+        clipped_x = clipped_x_flat.view(original_shape)
+
+        return clipped_x
+    
     def forward(self, x):
         with torch.no_grad():
+            if self.clip_prob > 0:
+                x = self.clip_by_prob(x)
             x_mean = x.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
             x = x - x_mean
-            x_std = x.view(x.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
+            x_std = x.view(x.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-8
             x = x / x_std.expand_as(x)
 
             indices = torch.bucketize(x, self.edges, right=False)
@@ -60,16 +82,20 @@ def WSQ_update(model, args):
     for name, param in model.named_parameters():
         if hasattr(args.quantizer, 'keyword'):
             if 'first-last' in args.quantizer.keyword and name == 'conv1.weight':
-                first_quant_conv = WSQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], n_bits=args.quantizer.wt_bit)
+                first_quant_conv = WSQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], 
+                                             n_bits=args.quantizer.wt_bit, clip_prob=args.quantizer.wt_clip_prob)
                 param.data.copy_(first_quant_conv(param.data)) 
             elif name != "conv1.weight" and ("conv1.weight" in name or "conv2.weight" in name):
-                layer_quant_conv = WSQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], n_bits=args.quantizer.wt_bit)
+                layer_quant_conv = WSQConv2d(param.shape[1], param.shape[0], kernel_size=param.shape[2], 
+                                             n_bits=args.quantizer.wt_bit, clip_prob=args.quantizer.wt_clip_prob)
                 param.data.copy_(layer_quant_conv(param.data))
             elif "downsample.0.weight" in name:
-                quant_conv1x1 = WSQConv2d(param.shape[1], param.shape[0], kernel_size=1, n_bits=args.quantizer.wt_bit)
+                quant_conv1x1 = WSQConv2d(param.shape[1], param.shape[0], kernel_size=1, 
+                                          n_bits=args.quantizer.wt_bit, clip_prob=args.quantizer.wt_clip_prob)
                 param.data.copy_(quant_conv1x1(param.data))
             elif 'first-last' in args.quantizer.keyword and name == 'fc.weight':
-                last_quant_linear = quant_linear(args.model.last_feature_dim, args.num_classes, bias=True, n_bits=args.quantizer.wt_bit)
+                last_quant_linear = quant_linear(args.model.last_feature_dim, args.num_classes, bias=True, 
+                                                 n_bits=args.quantizer.wt_bit, clip_prob=args.quantizer.wt_clip_prob)
                 param.data.copy_(last_quant_linear(param.data))
 
                 
