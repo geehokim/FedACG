@@ -25,10 +25,10 @@ class WSConv2d(nn.Conv2d):
                  padding, dilation, groups, bias)
         self.rho = rho
         self.init_mode = init_mode
-        self.reset_parameters()
+        self._reset_parameters()
         
     # TODO: Check!
-    def reset_parameters(self):
+    def _reset_parameters(self):
         if self.init_mode == "kaiming_uniform":
             init.kaiming_uniform_(self.weight)
         elif self.init_mode == "kaiming_normal":
