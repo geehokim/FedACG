@@ -49,9 +49,8 @@ class WSQConv2d(nn.Conv2d):
             x_std = x.view(x.size(0), -1).std(dim=1).view(-1, 1, 1, 1) + 1e-5
             x = x / x_std.expand_as(x)
 
-            flat_x = x.view(-1)
-            indices = torch.bucketize(flat_x, self.edges, right=False)
-            quantized_x = self.q_values[indices].view(x.size())
+            indices = torch.bucketize(x, self.edges, right=False)
+            quantized_x = self.q_values[indices]
             quantized_x = quantized_x * x_std + x_mean
         return quantized_x
         
