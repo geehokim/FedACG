@@ -64,7 +64,7 @@ class WSQConv2d(nn.Conv2d):
     
     def forward(self, x):
         with torch.no_grad():
-            if self.clip_by_prob > 0:
+            if self.clip_prob > 0:
                 x = self.clip_by_prob(x)
             x_mean = x.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
             x = x - x_mean
