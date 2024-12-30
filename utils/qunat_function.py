@@ -1,21 +1,22 @@
 from models.quant import *
 from models.layers import norm
+from models.quant import quantization
 
 def AQD_update(model, args):
 
     for name, param in model.named_parameters():
         if hasattr(args.quantizer, 'keyword'):
             if 'first-last' in args.quantizer.keyword and name == 'conv1.weight':
-                first_quant_conv = quant_conv(param.shape[0], param.shape[1], kernel_size=param.shape[2], args=args)
+                first_quant_conv = quantization(args, 'wt', [param.shape[1], param.shape[0], param.shape[2], param.shape[2]], groups=1)
                 param.data.copy_(first_quant_conv(param.data)) 
             elif name != "conv1.weight" and ("conv1.weight" in name or "conv2.weight" in name):
-                layer_quant_conv = quant_conv(param.shape[0], param.shape[1], kernel_size=param.shape[2], args=args)
+                layer_quant_conv = quantization(args, 'wt', [param.shape[1], param.shape[0], param.shape[2], param.shape[2]], groups=1)
                 param.data.copy_(layer_quant_conv(param.data))
             elif "downsample.0.weight" in name:
-                quant_conv1x1 = quant_conv(param.shape[0], param.shape[1], kernel_size=1, args=args)
+                quant_conv1x1 = quantization(args, 'wt', [param.shape[1], param.shape[0], param.shape[2], param.shape[2]], groups=1)
                 param.data.copy_(quant_conv1x1(param.data))
             elif 'first-last' in args.quantizer.keyword and name == 'fc.weight':
-                last_quant_linear = quant_linear(args.model.last_feature_dim, args.num_classes, bias=True, args=args)
+                last_quant_linear = quantization(args, 'wt', [param.shape[1], param.shape[0], param.shape[2], param.shape[2]], groups=1)
                 param.data.copy_(last_quant_linear(param.data))
 
 

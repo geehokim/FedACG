@@ -17,5 +17,6 @@ from models.ShuffleNetWS import *
 from models.MobileNetWS import *
 from models.MobileNetV3 import *
 from models.MobileNetV3WS import *
+from models.quant import *
 
 from models.build import build_encoder
