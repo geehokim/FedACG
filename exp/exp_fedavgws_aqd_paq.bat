@@ -11,15 +11,15 @@ if "%DATASET%" == "tinyimagenet" (
 )
 
 set ALPHA=0.3
-set PARTICIPATION_RATE=0.02
+set PARTICIPATION_RATE=0.05
 set WT_BIT=1
 set QUANTIZERS=PAQ AQD
 
 for %%Q in (%QUANTIZERS%) do (
     echo Running experiment with quantizer: %%Q
     python federated_train.py client=base server=base quantizer=%%Q ^
-    exp_name=FedAvgWS_%%Q_%ALPHA%_%WT_BIT%bit dataset=%DATASET% trainer.num_clients=100 ^
+    exp_name=FedAvgWS_%%Q_%ALPHA%_%WT_BIT%_bit__%PARTICIPATION_RATE%_ dataset=%DATASET% trainer.num_clients=100 ^
     split.alpha=%ALPHA% trainer.participation_rate=%PARTICIPATION_RATE% ^
     batch_size=%BATCH_SIZE% wandb=True model=resnet18_WS quantizer.wt_bit=%WT_BIT% ^
-    project="FedACG_WS_%ALPHA%_%PARTICIPATION_RATE%_Quant"
+    project="FedAVG_WS_Quant"
 )
