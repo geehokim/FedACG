@@ -62,4 +62,3 @@ defaults:
   - quantizer: base
   # - override hydra/job_logging: colorlog_custom
   # - override hydra/hydra_logging: colorlog
-

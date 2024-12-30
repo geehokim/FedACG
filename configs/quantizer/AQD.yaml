@@ -21,5 +21,5 @@ wt_quant_group: 1
 wt_grad_type: 'STE-scale'
 wt_grad_scale: 'fan-scale'
 wt_use_quant_loss: False
-wt_adaptive: 'var-mean' 
+wt_adaptive: None
 wt_clip_prob: 0.05
