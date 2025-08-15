@@ -84,12 +84,12 @@ We provide the theoretical convergence rate of our algorithm and demonstrate rem
 
    **Tiny-ImageNet, 100 clients, Dirichlet (0.3) split, 5% participation:**
    ~~~
-   CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=tinyimagenet trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=100 wandb=True trainer.local_lr_decay=0.995 
+   CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=tinyimagenet trainer.num_clients=100 split.alpha=0.3 trainer.participation_rate=0.05 batch_size=100 wandb=True
    ~~~
 
    **Tiny-ImageNet, 500 clients, Dirichlet (0.3) split, 2% participation:**
    ~~~
-   CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=tinyimagenet trainer.num_clients=500 split.alpha=0.3 trainer.participation_rate=0.02 batch_size=20 wandb=True trainer.local_lr_decay=0.995 
+   CUDA_VISIBLE_DEVICES=0 python federated_train.py server=FedACG client=ACG exp_name=FedACG dataset=tinyimagenet trainer.num_clients=500 split.alpha=0.3 trainer.participation_rate=0.02 batch_size=20 wandb=True
    ~~~
    
    ### Parallel training
